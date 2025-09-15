@@ -1,0 +1,306 @@
+<#
+Launcher gráfico para UWScript + DotNet
+- Importa: C:\Windows\Temp\DotNet.ps1
+         C:\Windows\Setup\Scripts\UWScript.ps1
+- Contém funções adicionais: Disable-WindowsDefender, Disable-UAC, Disable-WindowsUpdate
+- Usa caixas de confirmação para ações destrutivas.
+#>
+
+# ---------- Re-elevate se necessário ----------
+function Ensure-Elevated {
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $isAdmin) {
+        try {
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = 'powershell.exe'
+            $argList = @('-NoProfile','-ExecutionPolicy','Bypass','-File', "`"$PSCommandPath`"")
+            $psi.Arguments = $argList -join ' '
+            $psi.Verb = 'runas'
+            [System.Diagnostics.Process]::Start($psi) | Out-Null
+            Exit
+        } catch {
+            [System.Windows.Forms.MessageBox]::Show("Este script precisa ser executado como Administrador.`nReexecute como Administrador.","Privilégios insuficientes",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+            Exit 1
+        }
+    }
+}
+Ensure-Elevated
+
+# ---------- Importa scripts (ajuste caminhos se necessário) ----------
+$dotNetPath = "C:\Windows\Temp\DotNet.ps1"
+$uwPath    = "C:\Windows\Setup\Scripts\UWScript.ps1"
+
+if (Test-Path $dotNetPath) {
+    . $dotNetPath
+} else {
+    Write-Warning "DotNet.ps1 não encontrado em $dotNetPath — funcionalidade .NET ficará indisponível."
+}
+
+if (Test-Path $uwPath) {
+    . $uwPath
+} else {
+    Write-Warning "UWScript.ps1 não encontrado em $uwPath — muitas funções ficarão indisponíveis."
+}
+
+# ---------- Funções extras (Desativar Defender / UAC / Windows Update) ----------
+function Disable-WindowsDefender {
+    $msg = "ATENÇÃO:`nDesabilitar o Windows Defender deixará o sistema sem proteção integrada. Deseja continuar?"
+    if ([System.Windows.Forms.MessageBox]::Show($msg,"Confirmar Desativação Defender",[System.Windows.Forms.MessageBoxButtons]::YesNo,[System.Windows.Forms.MessageBoxIcon]::Warning) -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    try {
+        # Tenta parar e desabilitar o serviço do Windows Defender (WinDefend/Sense) e aplicar políticas
+        Write-Host "Parando e desabilitando serviços do Defender..."
+        Stop-Service -Name WinDefend -ErrorAction SilentlyContinue -Force
+        Set-Service -Name WinDefend -StartupType Disabled -ErrorAction SilentlyContinue
+
+        # Algumas instalações usam 'Sense' (Microsoft Defender for Endpoint); marque como disabled se existir
+        if (Get-Service -Name Sense -ErrorAction SilentlyContinue) {
+            Stop-Service -Name Sense -ErrorAction SilentlyContinue -Force
+            Set-Service -Name Sense -StartupType Disabled -ErrorAction SilentlyContinue
+        }
+
+        # Aplicar chaves de registro para impedir execução (conservador — pode variar por versão)
+        New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -ErrorAction SilentlyContinue | Out-Null
+        Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name "DisableAntiSpyware" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+
+        # Desativa Windows Security UI (opcional)
+        New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -ErrorAction SilentlyContinue | Out-Null
+        Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "DisableWindowsSecurityCenter" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+
+        [System.Windows.Forms.MessageBox]::Show("Windows Defender foi desativado (tente reiniciar se algum serviço não puder ser parado).","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+    }
+    catch {
+        [System.Windows.Forms.MessageBox]::Show("Erro ao desativar Windows Defender: $($_.Exception.Message)","Erro",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    }
+}
+
+function Enable-WindowsDefenderFallback {
+    # Caso queira reativar via UI: usa função Enable-WindowsDefender presente no UWScript se existir
+    if (Get-Command -Name Enable-WindowsDefender -ErrorAction SilentlyContinue) {
+        Enable-WindowsDefender
+        return
+    }
+    # fallback: reverter chaves
+    try {
+        Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name "DisableAntiSpyware" -ErrorAction SilentlyContinue
+        Set-Service -Name WinDefend -StartupType Automatic -ErrorAction SilentlyContinue
+        Start-Service -Name WinDefend -ErrorAction SilentlyContinue
+        [System.Windows.Forms.MessageBox]::Show("Tentativa de reativação do Defender concluída.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Erro ao reativar Defender: $($_.Exception.Message)","Erro",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    }
+}
+
+function Disable-UAC {
+    $msg = "ATENÇÃO:`nDesabilitar o UAC (EnableLUA) reduz a proteção de elevação do Windows e pode quebrar algumas aplicações. Deseja continuar?"
+    if ([System.Windows.Forms.MessageBox]::Show($msg,"Confirmar Desativação UAC",[System.Windows.Forms.MessageBoxButtons]::YesNo,[System.Windows.Forms.MessageBoxIcon]::Warning) -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    try {
+        # Define EnableLUA = 0 e ConsentPromptBehaviorAdmin = 0
+        cmd.exe /c reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableLUA /t REG_DWORD /d 0 /f | Out-Null
+        cmd.exe /c reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f | Out-Null
+
+        [System.Windows.Forms.MessageBox]::Show("UAC foi desabilitado via registro. Reinicie para aplicar totalmente.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Erro ao desabilitar UAC: $($_.Exception.Message)","Erro",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    }
+}
+
+function Enable-UACFallback {
+    try {
+        cmd.exe /c reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableLUA /t REG_DWORD /d 1 /f | Out-Null
+        cmd.exe /c reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 2 /f | Out-Null
+        [System.Windows.Forms.MessageBox]::Show("UAC foi reativado. Reinicie para aplicar totalmente.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Erro ao reativar UAC: $($_.Exception.Message)","Erro",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    }
+}
+
+function Disable-WindowsUpdate {
+    $msg = "ATENÇÃO:`nDesabilitar o Windows Update impede atualizações automáticas do sistema. Deseja continuar?"
+    if ([System.Windows.Forms.MessageBox]::Show($msg,"Confirmar Desativação Windows Update",[System.Windows.Forms.MessageBoxButtons]::YesNo,[System.Windows.Forms.MessageBoxIcon]::Warning) -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    try {
+        # Método 1: definir política NoAutoUpdate (equivalente à 'disabling automatic updates' nas políticas)
+        New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Force -ErrorAction SilentlyContinue | Out-Null
+        Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+
+        # Método 2: parar e desabilitar serviço wuauserv
+        Stop-Service -Name wuauserv -ErrorAction SilentlyContinue -Force
+        Set-Service  -Name wuauserv -StartupType Disabled -ErrorAction SilentlyContinue
+
+        # Para Windows Update Medic Service (WaaSMedicSvc) - desabilitar via tarefas/registro pode ser necessário (tentamos desabilitar)
+        if (Get-Service -Name WaaSMedicSvc -ErrorAction SilentlyContinue) {
+            try { Stop-Service -Name WaaSMedicSvc -Force -ErrorAction SilentlyContinue } catch {}
+            try { Set-Service -Name WaaSMedicSvc -StartupType Disabled -ErrorAction SilentlyContinue } catch {}
+        }
+
+        [System.Windows.Forms.MessageBox]::Show("Windows Update foi configurado para não atualizar automaticamente e serviços foram desativados. Reinicie para garantir aplicação completa.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Erro ao desabilitar Windows Update: $($_.Exception.Message)","Erro",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    }
+}
+
+function Enable-WindowsUpdateFallback {
+    try {
+        # Reverte NoAutoUpdate
+        Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -ErrorAction SilentlyContinue
+        # Reativa serviço
+        Set-Service -Name wuauserv -StartupType Manual -ErrorAction SilentlyContinue
+        Start-Service -Name wuauserv -ErrorAction SilentlyContinue
+        [System.Windows.Forms.MessageBox]::Show("Tentativa de reativação do Windows Update concluída.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Erro ao reativar Windows Update: $($_.Exception.Message)","Erro",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    }
+}
+
+# ---------- Interface Gráfica (esqueleto + mapeamento) ----------
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Central de Ajustes Windows - Launcher"
+$form.Size = New-Object System.Drawing.Size(540,700)
+$form.StartPosition = "CenterScreen"
+$form.FormBorderStyle = 'FixedDialog'
+$form.MaximizeBox = $false
+
+# helper para grupos
+function Add-CheckboxGroup {
+    param (
+        [string]$title,
+        [string[]]$items,
+        [int]$yStart
+    )
+    $groupBox = New-Object System.Windows.Forms.GroupBox
+    $groupBox.Text = $title
+    $groupBox.Location = New-Object System.Drawing.Point(10,$yStart)
+    $groupBox.Size = New-Object System.Drawing.Size(505,($items.Count * 28 + 30))
+    $form.Controls.Add($groupBox)
+
+    $checkboxes = @{}
+    $y = 20
+    foreach ($item in $items) {
+        $chk = New-Object System.Windows.Forms.CheckBox
+        $chk.Text = $item
+        $chk.Location = New-Object System.Drawing.Point(12,$y)
+        $chk.AutoSize = $true
+        $groupBox.Controls.Add($chk)
+        $checkboxes[$item] = $chk
+        $y += 28
+    }
+    return $checkboxes
+}
+
+# Define grupos e itens
+$funcionalidades = Add-CheckboxGroup -title "Funcionalidades do Windows" -items @(
+    "Habilitar .NET Framework 3.5",
+    "Remover OneDrive",
+    "Remover Apps Bloatware"
+) -yStart 10
+
+$privacidade = Add-CheckboxGroup -title "Privacidade & Segurança" -items @(
+    "Aplicar Configurações de Privacidade Recomendadas",
+    "Ativar Windows Defender",
+    "Desativar Windows Defender",
+    "Ativar UAC",
+    "Desativar UAC"
+) -yStart 140
+
+$updates = Add-CheckboxGroup -title "Atualizações" -items @(
+    "Aplicar Ajustes Recomendados de Windows Update",
+    "Voltar ao Padrão do Windows Update",
+    "Desativar Windows Update"
+) -yStart 280
+
+$otimizacao = Add-CheckboxGroup -title "Otimização" -items @(
+    "Otimizar Registro (HKLM + HKCU)",
+    "Configurações de Energia (Desempenho)"
+) -yStart 380
+
+$apps = Add-CheckboxGroup -title "Instalar Apps (WinGet / Store)" -items @(
+    "Firefox","Chrome","Brave","Edge","Thorium","Microsoft Store","UniGetUI"
+) -yStart 460
+
+# Mapeamento de funções
+$mapaFuncoes = @{
+    "Habilitar .NET Framework 3.5" = { if (Get-Command -Name Enable-DotNetFramework -ErrorAction SilentlyContinue) { Enable-DotNetFramework } else { [System.Windows.Forms.MessageBox]::Show(".NET function não encontrada.","Erro") } }
+    "Remover OneDrive" = { if (Get-Command -Name Uninstall-OneDrive -ErrorAction SilentlyContinue) { Uninstall-OneDrive } else { [System.Windows.Forms.MessageBox]::Show("Função Uninstall-OneDrive não encontrada.","Erro") } }
+    "Remover Apps Bloatware" = { if (Get-Command -Name Remove-Apps -ErrorAction SilentlyContinue) { Remove-Apps } else { [System.Windows.Forms.MessageBox]::Show("Função Remove-Apps não encontrada.","Erro") } }
+
+    "Aplicar Configurações de Privacidade Recomendadas" = { if (Get-Command -Name Set-RecommendedPrivacySettings -ErrorAction SilentlyContinue) { Set-RecommendedPrivacySettings } else { [System.Windows.Forms.MessageBox]::Show("Função Set-RecommendedPrivacySettings não encontrada.","Erro") } }
+    "Ativar Windows Defender" = { if (Get-Command -Name Enable-WindowsDefender -ErrorAction SilentlyContinue) { Enable-WindowsDefender } else { Enable-WindowsDefenderFallback } }
+    "Desativar Windows Defender" = { Disable-WindowsDefender }
+    "Ativar UAC" = { Enable-UACFallback }
+    "Desativar UAC" = { Disable-UAC }
+
+    "Aplicar Ajustes Recomendados de Windows Update" = { if (Get-Command -Name Set-RecommendedUpdateSettings -ErrorAction SilentlyContinue) { Set-RecommendedUpdateSettings } else { [System.Windows.Forms.MessageBox]::Show("Função Set-RecommendedUpdateSettings não encontrada.","Erro") } }
+    "Voltar ao Padrão do Windows Update" = { if (Get-Command -Name Set-DefaultUpdateSettings -ErrorAction SilentlyContinue) { Set-DefaultUpdateSettings } else { [System.Windows.Forms.MessageBox]::Show("Função Set-DefaultUpdateSettings não encontrada.","Erro") } }
+    "Desativar Windows Update" = { Disable-WindowsUpdate }
+
+    "Otimizar Registro (HKLM + HKCU)" = { if (Get-Command -Name Set-RecommendedHKLMRegistry -ErrorAction SilentlyContinue -and Get-Command -Name Set-RecommendedHKCURegistry -ErrorAction SilentlyContinue) { Set-RecommendedHKLMRegistry; Set-RecommendedHKCURegistry } else { [System.Windows.Forms.MessageBox]::Show("Funções de otimização de registro não encontradas.","Erro") } }
+    "Configurações de Energia (Desempenho)" = { if (Get-Command -Name Set-RecommendedPowerSettings -ErrorAction SilentlyContinue) { Set-RecommendedPowerSettings } else { [System.Windows.Forms.MessageBox]::Show("Função Set-RecommendedPowerSettings não encontrada.","Erro") } }
+
+    # Apps via WinGet / Store
+    "Firefox" = { Install-AppWithWinGet -AppName "Mozilla.Firefox" -FriendlyName "Mozilla Firefox" }
+    "Chrome"  = { Install-AppWithWinGet -AppName "Google.Chrome" -FriendlyName "Google Chrome" }
+    "Brave"   = { Install-AppWithWinGet -AppName "Brave.Brave" -FriendlyName "Brave Browser" }
+    "Edge"    = { Install-AppWithWinGet -AppName "Microsoft.Edge" -FriendlyName "Microsoft Edge" }
+    "Thorium" = { Install-AppWithWinGet -AppName "Alex313031.Thorium" -FriendlyName "Thorium Browser" }
+    "Microsoft Store" = { Install-Store }
+    "UniGetUI" = { Install-AppWithWinGet -AppName "MartiCliment.UniGetUI" -FriendlyName "UniGetUI (Software Manager)" }
+}
+
+# Botões
+$applyBtn = New-Object System.Windows.Forms.Button
+$applyBtn.Text = "Aplicar Selecionados"
+$applyBtn.Size = New-Object System.Drawing.Size(160,34)
+$applyBtn.Location = New-Object System.Drawing.Point(180,620)
+$applyBtn.Add_Click({
+    $selections = @()
+    foreach ($group in @($funcionalidades,$privacidade,$updates,$otimizacao,$apps)) {
+        foreach ($k in $group.Keys) {
+            if ($group[$k].Checked) { $selections += $k }
+        }
+    }
+
+    if ($selections.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("Nenhuma opção selecionada.","Aviso",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+        return
+    }
+
+    # Mostrar resumo antes de executar
+    $summary = "Você selecionou:`n`n" + ($selections -join "`n")
+    if ([System.Windows.Forms.MessageBox]::Show($summary + "`n`nDeseja prosseguir?","Confirmar Ações",[System.Windows.Forms.MessageBoxButtons]::YesNo,[System.Windows.Forms.MessageBoxIcon]::Question) -ne [System.Windows.Forms.DialogResult]::Yes) {
+        return
+    }
+
+    # Executa cada função mapeada em sequência (tratamento de erros)
+    foreach ($item in $selections) {
+        if ($mapaFuncoes.ContainsKey($item)) {
+            try {
+                Write-Host "Executando: $item" -ForegroundColor Cyan
+                & $mapaFuncoes[$item]
+            } catch {
+                [System.Windows.Forms.MessageBox]::Show("Erro ao executar $item: $($_.Exception.Message)","Erro",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+            }
+        } else {
+            Write-Warning "Nenhuma função mapeada para $item"
+        }
+    }
+
+    [System.Windows.Forms.MessageBox]::Show("Execução das ações selecionadas concluída.`nAlgumas alterações podem requerer reinício.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+})
+
+$cancelBtn = New-Object System.Windows.Forms.Button
+$cancelBtn.Text = "Fechar"
+$cancelBtn.Size = New-Object System.Drawing.Size(100,28)
+$cancelBtn.Location = New-Object System.Drawing.Point(360,620)
+$cancelBtn.Add_Click({ $form.Close() })
+
+$form.Controls.Add($applyBtn)
+$form.Controls.Add($cancelBtn)
+
+# Exibir formulário
+$form.Topmost = $true
+$form.ShowDialog() | Out-Null

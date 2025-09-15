@@ -1,0 +1,339 @@
+# Launcher gráfico com mapeamento de funções + funções para desabilitar Defender/UAC/Windows Update
+# Salve como AjustesLauncher.ps1 e execute como Administrador.
+
+# ---------------- Elevation check ----------------
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    try {
+        Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+        Exit
+    } catch {
+        Write-Error "Este script precisa ser executado como Administrador."
+        Exit 1
+    }
+}
+
+# ---------------- Imports (se existir) ----------------
+# Se quiser usar funções existentes do seu UWScript/DotNet, descomente e ajuste os caminhos.
+# . "C:\Windows\Temp\DotNet.ps1"
+# . "C:\Windows\Setup\Scripts\UWScript.ps1"
+
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+# ---------------- Funções novas (Desabilitar Defender / UAC / Windows Update) ----------------
+
+function Disable-WindowsDefender {
+    [System.Windows.Forms.DialogResult]$r = [System.Windows.Forms.MessageBox]::Show(
+        "Tem certeza que deseja DESATIVAR o Windows Defender? Isso reduzirá a proteção do sistema.",
+        "Confirmar - Desativar Defender",
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Warning
+    )
+    if ($r -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    Write-Host "Aplicando ajustes para desativar Windows Defender..." -ForegroundColor Yellow
+
+    try {
+        # Policy key (older / supported ways)
+        New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Defender" -Force -ErrorAction SilentlyContinue | Out-Null
+        Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Defender" -Name "DisableAntiSpyware" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+
+        # Disable Windows Defender services (set Start = 4)
+        $svcNames = @("WinDefend","Sense") # 'Sense' used by some installations (e.g., Defender for Endpoint)
+        foreach ($s in $svcNames) {
+            if (Get-Service -Name $s -ErrorAction SilentlyContinue) {
+                try {
+                    Set-Service -Name $s -StartupType Disabled -ErrorAction SilentlyContinue
+                } catch {}
+                try { Stop-Service -Name $s -Force -ErrorAction SilentlyContinue } catch {}
+            }
+        }
+
+        # Optional: remove scheduled tasks related to Defender (best-effort)
+        Get-ScheduledTask -TaskName "*Windows Defender*" -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false -ErrorAction SilentlyContinue
+
+        Write-Host "Windows Defender foi desativado (ajustes aplicados). Reinicie o sistema para garantir que as mudanças tenham efeito." -ForegroundColor Green
+        [System.Windows.Forms.MessageBox]::Show("Windows Defender: alterações aplicadas. Reinicie o sistema para completar.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information)
+    } catch {
+        Write-Host "Erro ao desativar Windows Defender: $_" -ForegroundColor Red
+    }
+}
+
+function Enable-WindowsDefender {
+    [System.Windows.Forms.DialogResult]$r = [System.Windows.Forms.MessageBox]::Show(
+        "Tem certeza que deseja ATIVAR o Windows Defender?",
+        "Confirmar - Ativar Defender",
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Question
+    )
+    if ($r -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    try {
+        # Remove policy DisableAntiSpyware if present
+        if (Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Defender") {
+            Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Defender" -Name "DisableAntiSpyware" -ErrorAction SilentlyContinue
+        }
+
+        # Set service start types back to Manual/Automatic if present (best-effort)
+        if (Get-Service -Name "WinDefend" -ErrorAction SilentlyContinue) {
+            Set-Service -Name "WinDefend" -StartupType Automatic -ErrorAction SilentlyContinue
+            Start-Service -Name "WinDefend" -ErrorAction SilentlyContinue
+        }
+
+        Write-Host "Windows Defender ativado (ajustes aplicados). Reinicie o sistema se necessário." -ForegroundColor Green
+        [System.Windows.Forms.MessageBox]::Show("Windows Defender: alterações aplicadas. Reinicie se necessário.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information)
+    } catch {
+        Write-Host "Erro ao ativar Windows Defender: $_" -ForegroundColor Red
+    }
+}
+
+function Disable-UAC {
+    [System.Windows.Forms.DialogResult]$r = [System.Windows.Forms.MessageBox]::Show(
+        "Desabilitar o UAC (Controle de Conta de Usuário) reduz a segurança e pode permitir a execução de mudanças sem confirmação. Deseja continuar?",
+        "Confirmar - Desabilitar UAC",
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Warning
+    )
+    if ($r -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    try {
+        # Set EnableLUA to 0
+        cmd.exe /c reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableLUA /t REG_DWORD /d 0 /f | Out-Null
+        # Set ConsentPromptBehaviorAdmin to 0 (no prompt)
+        cmd.exe /c reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f | Out-Null
+
+        Write-Host "UAC foi desativado via registro. É necessário reiniciar para que a alteração tenha efeito." -ForegroundColor Green
+        [System.Windows.Forms.MessageBox]::Show("UAC desativado. Reinicie o sistema para aplicar completamente.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information)
+    } catch {
+        Write-Host "Erro ao desabilitar UAC: $_" -ForegroundColor Red
+    }
+}
+
+function Enable-UAC {
+    [System.Windows.Forms.DialogResult]$r = [System.Windows.Forms.MessageBox]::Show(
+        "Deseja ATIVAR novamente o UAC?",
+        "Confirmar - Ativar UAC",
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Question
+    )
+    if ($r -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    try {
+        cmd.exe /c reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableLUA /t REG_DWORD /d 1 /f | Out-Null
+        cmd.exe /c reg.exe add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 2 /f | Out-Null
+
+        Write-Host "UAC ativado. Reinicie o sistema se necessário." -ForegroundColor Green
+        [System.Windows.Forms.MessageBox]::Show("UAC ativado. Reinicie se necessário.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information)
+    } catch {
+        Write-Host "Erro ao ativar UAC: $_" -ForegroundColor Red
+    }
+}
+
+function Disable-WindowsUpdate {
+    [System.Windows.Forms.DialogResult]$r = [System.Windows.Forms.MessageBox]::Show(
+        "Desabilitar o Windows Update pode deixar o sistema sem atualizações de segurança. Deseja continuar?",
+        "Confirmar - Desabilitar Windows Update",
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Warning
+    )
+    if ($r -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    try {
+        # Registry approach - set NoAutoUpdate
+        New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Force -ErrorAction SilentlyContinue | Out-Null
+        Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "AUOptions" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+
+        # Stop + disable service
+        if (Get-Service -Name wuauserv -ErrorAction SilentlyContinue) {
+            try { Stop-Service -Name wuauserv -Force -ErrorAction SilentlyContinue } catch {}
+            try { Set-Service -Name wuauserv -StartupType Disabled -ErrorAction SilentlyContinue } catch {}
+        }
+
+        # Optionally disable Bits (Background Intelligent Transfer Service) to reduce auto-downloads (best-effort)
+        if (Get-Service -Name BITS -ErrorAction SilentlyContinue) {
+            try { Stop-Service -Name BITS -Force -ErrorAction SilentlyContinue } catch {}
+            try { Set-Service -Name BITS -StartupType Disabled -ErrorAction SilentlyContinue } catch {}
+        }
+
+        Write-Host "Windows Update desativado (ajustes aplicados). Reinicie para garantir." -ForegroundColor Green
+        [System.Windows.Forms.MessageBox]::Show("Windows Update: alterações aplicadas. Reinicie o sistema para completar.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information)
+    } catch {
+        Write-Host "Erro ao desabilitar Windows Update: $_" -ForegroundColor Red
+    }
+}
+
+function Enable-WindowsUpdate {
+    [System.Windows.Forms.DialogResult]$r = [System.Windows.Forms.MessageBox]::Show(
+        "Deseja reativar o Windows Update?",
+        "Confirmar - Ativar Windows Update",
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Question
+    )
+    if ($r -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    try {
+        if (Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU") {
+            Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -ErrorAction SilentlyContinue
+            Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "AUOptions" -ErrorAction SilentlyContinue
+        }
+        if (Get-Service -Name wuauserv -ErrorAction SilentlyContinue) {
+            Set-Service -Name wuauserv -StartupType Manual -ErrorAction SilentlyContinue
+            Start-Service -Name wuauserv -ErrorAction SilentlyContinue
+        }
+        if (Get-Service -Name BITS -ErrorAction SilentlyContinue) {
+            Set-Service -Name BITS -StartupType Manual -ErrorAction SilentlyContinue
+            Start-Service -Name BITS -ErrorAction SilentlyContinue
+        }
+
+        Write-Host "Windows Update reativado." -ForegroundColor Green
+        [System.Windows.Forms.MessageBox]::Show("Windows Update reativado.","Concluído",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information)
+    } catch {
+        Write-Host "Erro ao ativar Windows Update: $_" -ForegroundColor Red
+    }
+}
+
+# ---------------- Helper UI: Criar grupos de checkboxes ----------------
+function Add-CheckboxGroup {
+    param (
+        [string]$title,
+        [string[]]$items,
+        [int]$yStart
+    )
+    $groupBox = New-Object System.Windows.Forms.GroupBox
+    $groupBox.Text = $title
+    $groupBox.Location = New-Object System.Drawing.Point(10,$yStart)
+    $groupBox.Size = New-Object System.Drawing.Size(460,($items.Count * 25 + 30))
+    $form.Controls.Add($groupBox)
+
+    $checkboxes = @{}
+    $y = 20
+    foreach ($item in $items) {
+        $chk = New-Object System.Windows.Forms.CheckBox
+        $chk.Text = $item
+        $chk.Location = New-Object System.Drawing.Point(15,$y)
+        $chk.AutoSize = $true
+        $groupBox.Controls.Add($chk)
+        $checkboxes[$item] = $chk
+        $y += 25
+    }
+    return $checkboxes
+}
+
+# ---------------- UI principal ----------------
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Central de Ajustes Windows"
+$form.Size = New-Object System.Drawing.Size(500,700)
+$form.StartPosition = "CenterScreen"
+
+$funcionalidades = Add-CheckboxGroup `
+    -title "Funcionalidades do Windows" `
+    -items @("Habilitar .NET Framework 3.5","Remover OneDrive","Remover Apps Bloatware") `
+    -yStart 10
+
+$privacidade = Add-CheckboxGroup `
+    -title "Privacidade & Segurança" `
+    -items @("Aplicar Configurações de Privacidade Recomendadas","Ativar Windows Defender","Desativar Windows Defender","Ativar UAC","Desativar UAC") `
+    -yStart 110
+
+$updates = Add-CheckboxGroup `
+    -title "Atualizações" `
+    -items @("Aplicar Ajustes Recomendados de Windows Update","Voltar ao Padrão do Windows Update","Desativar Windows Update","Ativar Windows Update") `
+    -yStart 230
+
+$otimizacao = Add-CheckboxGroup `
+    -title "Otimização" `
+    -items @("Otimizar Registro (HKLM + HKCU)","Configurações de Energia (Desempenho)") `
+    -yStart 350
+
+$apps = Add-CheckboxGroup `
+    -title "Instalação de Apps" `
+    -items @("Firefox","Chrome","Brave","Edge","Thorium","Microsoft Store","UniGetUI") `
+    -yStart 430
+
+# ---------------- Mapeamento (usa funções existentes se disponíveis, senão usa as novas) ----------------
+$mapaFuncoes = @{
+    # Funcionalidades
+    "Habilitar .NET Framework 3.5" = { if (Get-Command Enable-DotNetFramework -ErrorAction SilentlyContinue) { Enable-DotNetFramework } else { [System.Windows.Forms.MessageBox]::Show("Função Enable-DotNetFramework não encontrada. Verifique DotNet.ps1.","Erro") } }
+    "Remover OneDrive"             = { if (Get-Command Uninstall-OneDrive -ErrorAction SilentlyContinue) { Uninstall-OneDrive } else { Write-Host "Uninstall-OneDrive não encontrada; tentando remover com comandos padrão..."; Uninstall-OneDrive -ErrorAction SilentlyContinue } }
+    "Remover Apps Bloatware"       = { if (Get-Command Remove-Apps -ErrorAction SilentlyContinue) { Remove-Apps } else { [System.Windows.Forms.MessageBox]::Show("Função Remove-Apps não encontrada.","Erro") } }
+
+    # Privacidade & Segurança
+    "Aplicar Configurações de Privacidade Recomendadas" = { if (Get-Command Set-RecommendedPrivacySettings -ErrorAction SilentlyContinue) { Set-RecommendedPrivacySettings } else { [System.Windows.Forms.MessageBox]::Show("Função Set-RecommendedPrivacySettings não encontrada.","Erro") } }
+    "Ativar Windows Defender"     = { Enable-WindowsDefender }
+    "Desativar Windows Defender"  = { Disable-WindowsDefender }
+    "Ativar UAC"                  = { Enable-UAC }
+    "Desativar UAC"               = { Disable-UAC }
+
+    # Atualizações
+    "Aplicar Ajustes Recomendados de Windows Update" = { if (Get-Command Set-RecommendedUpdateSettings -ErrorAction SilentlyContinue) { Set-RecommendedUpdateSettings } else { [System.Windows.Forms.MessageBox]::Show("Função Set-RecommendedUpdateSettings não encontrada.","Erro") } }
+    "Voltar ao Padrão do Windows Update"             = { if (Get-Command Set-DefaultUpdateSettings -ErrorAction SilentlyContinue) { Set-DefaultUpdateSettings } else { [System.Windows.Forms.MessageBox]::Show("Função Set-DefaultUpdateSettings não encontrada.","Erro") } }
+    "Desativar Windows Update"                       = { Disable-WindowsUpdate }
+    "Ativar Windows Update"                         = { Enable-WindowsUpdate }
+
+    # Otimização
+    "Otimizar Registro (HKLM + HKCU)" = { if (Get-Command Set-RecommendedHKLMRegistry -ErrorAction SilentlyContinue -CommandType Function) { Set-RecommendedHKLMRegistry; Set-RecommendedHKCURegistry } else { [System.Windows.Forms.MessageBox]::Show("Funções de otimização de registro não encontradas.","Erro") } }
+    "Configurações de Energia (Desempenho)" = { if (Get-Command Set-RecommendedPowerSettings -ErrorAction SilentlyContinue) { Set-RecommendedPowerSettings } else { [System.Windows.Forms.MessageBox]::Show("Função Set-RecommendedPowerSettings não encontrada.","Erro") } }
+
+    # Apps (WinGet)
+    "Firefox"          = { if (Get-Command Install-AppWithWinGet -ErrorAction SilentlyContinue) { Install-AppWithWinGet -AppName "Mozilla.Firefox" -FriendlyName "Mozilla Firefox" } else { [System.Windows.Forms.MessageBox]::Show("WinGet/Install-AppWithWinGet não disponível.","Erro") } }
+    "Chrome"           = { if (Get-Command Install-AppWithWinGet -ErrorAction SilentlyContinue) { Install-AppWithWinGet -AppName "Google.Chrome" -FriendlyName "Google Chrome" } else { [System.Windows.Forms.MessageBox]::Show("WinGet/Install-AppWithWinGet não disponível.","Erro") } }
+    "Brave"            = { if (Get-Command Install-AppWithWinGet -ErrorAction SilentlyContinue) { Install-AppWithWinGet -AppName "Brave.Brave" -FriendlyName "Brave Browser" } else { [System.Windows.Forms.MessageBox]::Show("WinGet/Install-AppWithWinGet não disponível.","Erro") } }
+    "Edge"             = { if (Get-Command Install-AppWithWinGet -ErrorAction SilentlyContinue) { Install-AppWithWinGet -AppName "Microsoft.Edge" -FriendlyName "Microsoft Edge" } else { [System.Windows.Forms.MessageBox]::Show("WinGet/Install-AppWithWinGet não disponível.","Erro") } }
+    "Thorium"          = { if (Get-Command Install-AppWithWinGet -ErrorAction SilentlyContinue) { Install-AppWithWinGet -AppName "Alex313031.Thorium" -FriendlyName "Thorium Browser" } else { [System.Windows.Forms.MessageBox]::Show("WinGet/Install-AppWithWinGet não disponível.","Erro") } }
+    "Microsoft Store"  = { if (Get-Command Install-Store -ErrorAction SilentlyContinue) { Install-Store } else { [System.Windows.Forms.MessageBox]::Show("Função Install-Store não encontrada.","Erro") } }
+    "UniGetUI"         = { if (Get-Command Install-AppWithWinGet -ErrorAction SilentlyContinue) { Install-AppWithWinGet -AppName "MartiCliment.UniGetUI" -FriendlyName "UniGetUI (Software Manager)" } else { [System.Windows.Forms.MessageBox]::Show("WinGet/Install-AppWithWinGet não disponível.","Erro") } }
+}
+
+# ---------------- Botão Aplicar com confirmações por ação crítica ----------------
+$okButton = New-Object System.Windows.Forms.Button
+$okButton.Text = "Aplicar Selecionados"
+$okButton.Location = New-Object System.Drawing.Point(180,620)
+$okButton.Size = New-Object System.Drawing.Size(140,30)
+$okButton.Add_Click({
+    $selections = @()
+    foreach ($group in @($funcionalidades,$privacidade,$updates,$otimizacao,$apps)) {
+        foreach ($key in $group.Keys) {
+            if ($group[$key].Checked) { $selections += $key }
+        }
+    }
+
+    if ($selections.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("Nenhuma opção selecionada.","Aviso")
+        return
+    }
+
+    # Lista resumo e confirmação final
+    $summary = "Você selecionou:`n" + ($selections -join "`n") + "`n`nContinuar?"
+    [System.Windows.Forms.DialogResult]$resp = [System.Windows.Forms.MessageBox]::Show($summary,"Confirmar execução",[System.Windows.Forms.MessageBoxButtons]::YesNo,[System.Windows.Forms.MessageBoxIcon]::Question)
+    if ($resp -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+
+    # Executa em sequência (cada ação em try/catch). Para ações críticas já foi pedido confirmação nas próprias funções.
+    foreach ($item in $selections) {
+        if ($mapaFuncoes.ContainsKey($item)) {
+            try {
+                Write-Host "Executando: $item" -ForegroundColor Cyan
+                & $mapaFuncoes[$item]
+            } catch {
+                Write-Host "Erro ao executar $item : $_" -ForegroundColor Red
+            }
+        } else {
+            Write-Host "Nenhuma função mapeada para: $item" -ForegroundColor Yellow
+        }
+    }
+
+    [System.Windows.Forms.MessageBox]::Show("Execução finalizada. Verifique mensagens no console para detalhes. Algumas alterações podem requerer reinício.","Concluído")
+})
+
+$form.Controls.Add($okButton)
+
+# ---------------- Botão Cancelar ----------------
+$cancelButton = New-Object System.Windows.Forms.Button
+$cancelButton.Text = "Fechar"
+$cancelButton.Location = New-Object System.Drawing.Point(330,620)
+$cancelButton.Size = New-Object System.Drawing.Size(90,30)
+$cancelButton.Add_Click({ $form.Close() })
+$form.Controls.Add($cancelButton)
+
+# ---------------- Mostra a UI ----------------
+$form.ShowDialog()

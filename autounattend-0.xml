@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+  <settings pass="windowsPE">
+<component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="x86" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+<SetupUILanguage>
+<UILanguage>pt-BR</UILanguage>
+</SetupUILanguage>
+<InputLocale>0416:00000416</InputLocale>
+<SystemLocale>pt-BR</SystemLocale>
+<UILanguage>pt-BR</UILanguage>
+<UserLocale>pt-BR</UserLocale>
+</component>
+<component name="Microsoft-Windows-Setup" processorArchitecture="x86" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <ImageInstall>
+        <OSImage>
+          <InstallFrom>
+            <MetaData wcm:action="add">
+              <Key>/IMAGE/NAME</Key>
+              <Value>Windows 10 Pro</Value>
+            </MetaData>
+          </InstallFrom>
+          <WillShowUI>OnError</WillShowUI>
+        </OSImage>
+      </ImageInstall>
+<UserData>
+<ProductKey>
+<Key>VK7JG-NPHTM-C97JM-9MPGT-3V66T</Key>
+<WillShowUI>OnError</WillShowUI>
+</ProductKey>
+<AcceptEula>true</AcceptEula>
+</UserData>
+<UseConfigurationSet>false</UseConfigurationSet>
+</component>
+</settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="x86" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <InputLocale>0416:00000416</InputLocale>
+      <SystemLocale>pt-BR</SystemLocale>
+      <UILanguage>pt-BR</UILanguage>
+      <UserLocale>pt-BR</UserLocale>
+    </component>
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="x86" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <UserAccounts>
+        <LocalAccounts>
+          <LocalAccount wcm:action="add">
+            <Name>User</Name>
+            <Group>Administrators</Group>
+            <Password>
+              <Value></Value>
+              <PlainText>true</PlainText>
+            </Password>
+          </LocalAccount>
+        </LocalAccounts>
+      </UserAccounts>
+      <AutoLogon>
+        <Username>User</Username>
+        <Enabled>true</Enabled>
+        <LogonCount>1</LogonCount>
+        <Password>
+          <Value></Value>
+          <PlainText>true</PlainText>
+        </Password>
+      </AutoLogon>
+      <OOBE>
+        <ProtectYourPC>3</ProtectYourPC>
+        <HideEULAPage>true</HideEULAPage>
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+      </OOBE>
+      <FirstLogonCommands>
+        <SynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <CommandLine>reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoLogonCount /t REG_DWORD /d 0 /f</CommandLine>
+        </SynchronousCommand>
+        <SynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <CommandLine>reg.exe add "HKLM\Software\Policies\Microsoft\Windows\Explorer" /v "StartLayoutFile" /t REG_SZ /d "%SystemRoot%\LayoutModification.xml" /f</CommandLine>
+        </SynchronousCommand>
+        <SynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <CommandLine>%SystemRoot%\Setup\Scripts\SetupComplete.cmd</CommandLine>
+        </SynchronousCommand>
+      </FirstLogonCommands>
+    </component>
+  </settings>
+</unattend>

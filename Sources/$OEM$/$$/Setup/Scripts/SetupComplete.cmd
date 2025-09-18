@@ -19,4 +19,4 @@ cmd /c %~dp0remover_edge.bat
 ::powershell -ExecutionPolicy Bypass -File %~dp0User_customization.ps1
 
 :: Copia o script de ajuste para C:
-copy %~dp0User_customization.ps1 %SystemRoot%
+::copy %~dp0User_customization.ps1 %SystemRoot%

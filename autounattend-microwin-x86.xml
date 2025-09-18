@@ -107,7 +107,7 @@
         </SynchronousCommand>
         <SynchronousCommand wcm:action="add">
           <Order>2</Order>
-          <CommandLine>reg.exe add "HKLM\Software\Policies\Microsoft\Windows\Explorer" /v "StartLayoutFile" /t REG_SZ /d "%SystemRoot%\LayoutModification.xml" /f</CommandLine>
+          <CommandLine>powershell.exe -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\Configurar-Layout.ps1</CommandLine>
         </SynchronousCommand>
         <SynchronousCommand wcm:action="add">
           <Order>3</Order>
@@ -117,3 +117,4 @@
     </component>
   </settings>
 </unattend>
+

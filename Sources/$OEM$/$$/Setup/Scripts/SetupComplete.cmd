@@ -13,7 +13,8 @@ regedit /s %~dp0adiciona-cmd-powershell-menucontexto.reg
 regedit /s %~dp0reiniciar-menu-contexto.reg
 
 :: Remove executável do microsoft edge
-cmd /c %~dp0remover_edge.bat
+::cmd /c %~dp0remover_edge.bat
+powershell -ExecutionPolicy Bypass -File %~dp0FirstStartup.ps1
 
 :: Executar script user customization.ps1
 ::powershell -ExecutionPolicy Bypass -File %~dp0User_customization.ps1

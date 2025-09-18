@@ -4,7 +4,7 @@ echo list disk | diskpart > X:\lista-disco.txt
 chcp 65001 >null
 cls
 echo          ================================
-echo           Aguarde a execução do diskpart
+echo           Aguarde a execucao do diskpart
 echo.
 echo              para identificar o disco
 echo          ================================
@@ -14,13 +14,13 @@ cls
 :main_menu
 cls
 echo ================================
-echo      Escolha o modo de inicialização:
+echo      Escolha o modo de inicializacao:
 echo ================================
 echo  1. Legacy
 echo  2. UEFI
 echo  0. Sair
 echo ================================
-set /p choice="Digite o número da opção: "
+set /p choice="Digite o numero da opcao: "
 
 if "%choice%"=="1" (
 	set /a "system=100"
@@ -32,7 +32,7 @@ if "%choice%"=="1" (
     echo Saindo...
     exit /b
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto main_menu
 )
@@ -40,14 +40,14 @@ if "%choice%"=="1" (
 :legacy_menu
 cls
 echo ==============================================
-echo           Modo de inicialização em Legacy.
+echo           Modo de inicializacao em Legacy.
 echo ==============================================
-echo  11. Criar as partições System e Windows
-echo  12. Criar as partições System, Windows e Dados
-echo  13. Criar as partições System, Windows e Linux
+echo  11. Criar as particoes System e Windows
+echo  12. Criar as particoes System, Windows e Dados
+echo  13. Criar as particoes System, Windows e Linux
 echo   M. Voltar ao menu principal
 echo ==============================================
-set /p legacy_choice="Digite o número da opção: "
+set /p legacy_choice="Digite o numero da opcao: "
 
 if "%legacy_choice%"=="11" (
     call :create_partitions_legacy
@@ -58,7 +58,7 @@ if "%legacy_choice%"=="11" (
 ) else if /i "%legacy_choice%"=="M" (
     goto main_menu
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto legacy_menu
 )
@@ -67,15 +67,15 @@ if "%legacy_choice%"=="11" (
 cls
 echo.
 echo ========================================
-echo  Criando as partições no modo Legacy...
+echo  Criando as particoes no modo Legacy...
 echo ========================================
 echo.
 
-set /p disco=" Defina qual disco será utilizado: "
+set /p disco=" Defina qual disco sera utilizado: "
 echo.
 echo Disco escolhido: !disco!
-echo Tamanho da partição System: !system! MB
-echo Tamanho da partição Windows: Restante do disco.
+echo Tamanho da particao System: !system! MB
+echo Tamanho da particao Windows: Restante do disco.
 echo.
 set /p continue=". Deseja continuar o procedimento? (S/N): "
 
@@ -88,7 +88,7 @@ if "!continue!"=="S" (
 ) else if /i "!continue!"=="N" (
     goto legacy_menu
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto legacy_menu
 )
@@ -111,17 +111,17 @@ goto legacy_menu
 cls
 echo.
 echo ========================================
-echo  Criando as partições no modo Legacy...
+echo  Criando as particoes no modo Legacy...
 echo ========================================
 echo.
 
-set /p disco="Defina qual disco será utilizado: "
-set /p windows="Defina o tamanho, em MB, da partição Windows: "
+set /p disco="Defina qual disco sera utilizado: "
+set /p windows="Defina o tamanho, em MB, da particao Windows: "
 echo.
 echo Disco escolhido: !disco!
-echo Tamanho da partição System: !system! MB
-echo Tamanho da partição Windows: !windows! MB
-echo Tamanho da partição Dados pessoais: Restante do disco.
+echo Tamanho da particao System: !system! MB
+echo Tamanho da particao Windows: !windows! MB
+echo Tamanho da particao Dados pessoais: Restante do disco.
 echo.
 set /p continue=". Deseja continuar o procedimento? (S/N): "
 
@@ -134,7 +134,7 @@ if "!continue!"=="S" (
 ) else if /i "!continue!"=="N" (
     goto legacy_menu
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto legacy_menu
 )
@@ -160,17 +160,17 @@ goto legacy_menu
 cls
 echo.
 echo ========================================
-echo  Criando as partições no modo Legacy...
+echo  Criando as particoes no modo Legacy...
 echo ========================================
 echo.
 
-set /p disco="Defina qual disco será utilizado: "
-set /p windows="Defina o tamanho, em MB, da partição Windows: "
+set /p disco="Defina qual disco sera utilizado: "
+set /p windows="Defina o tamanho, em MB, da particao Windows: "
 echo.
 echo Disco escolhido: !disco!
-echo Tamanho da partição System: !system! MB
-echo Tamanho da partição Windows: !windows! MB
-echo Tamanho da partição Linux: Restante do disco.
+echo Tamanho da particao System: !system! MB
+echo Tamanho da particao Windows: !windows! MB
+echo Tamanho da particao Linux: Restante do disco.
 echo.
 set /p continue=". Deseja continuar o procedimento? (S/N): "
 
@@ -183,7 +183,7 @@ if "!continue!"=="S" (
 ) else if /i "!continue!"=="N" (
     goto legacy_menu
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto legacy_menu
 )
@@ -209,15 +209,15 @@ goto legacy_menu
 :uefi_menu
 cls
 echo =====================================================
-echo            Modo de inicialização UEFI.
+echo            Modo de inicializacao UEFI.
 echo =====================================================
-echo  21. Criar as partições EFI e Windows
-echo  22. Criar as partições EFI, Windows e Dados
-echo  23. Criar as partições EFI, Windows e Recovery
-echo  24. Criar as partições EFI, Windows, Recovery e Dados
+echo  21. Criar as particoes EFI e Windows
+echo  22. Criar as particoes EFI, Windows e Dados
+echo  23. Criar as particoes EFI, Windows e Recovery
+echo  24. Criar as particoes EFI, Windows, Recovery e Dados
 echo   M. Voltar ao menu principal
 echo =====================================================
-set /p uefi_choice="Digite o número da opção: "
+set /p uefi_choice="Digite o numero da opcao: "
 
 if "%uefi_choice%"=="21" (
     call :create_partitions_uefi
@@ -230,7 +230,7 @@ if "%uefi_choice%"=="21" (
 ) else if /i "%uefi_choice%"=="M" (
     goto main_menu
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto uefi_menu
 )
@@ -239,15 +239,15 @@ if "%uefi_choice%"=="21" (
 cls
 echo.
 echo ========================================
-echo   Criando as partições no modo UEFI...
+echo   Criando as particoes no modo UEFI...
 echo ========================================
 echo.
-set /p disco="Defina qual disco será utilizado: "
+set /p disco="Defina qual disco sera utilizado: "
 
 echo.
 echo Disco escolhido: !disco!
-echo Tamanho da partição UEFI: !efi! MB
-echo Tamanho da partição Windows: Restante do disco.
+echo Tamanho da particao UEFI: !efi! MB
+echo Tamanho da particao Windows: Restante do disco.
 echo.
 set /p continue=". Deseja continuar o procedimento? (S/N): "
 
@@ -260,7 +260,7 @@ if "!continue!"=="S" (
 ) else if /i "!continue!"=="N" (
     goto uefi_menu
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto uefi_menu
 )
@@ -282,16 +282,16 @@ goto uefi_menu
 cls
 echo.
 echo ========================================
-echo   Criando as partições no modo UEFI...
+echo   Criando as particoes no modo UEFI...
 echo ========================================
 echo.
-set /p disco="Defina qual disco será utilizado: "
-set /p windows="Defina o tamanho, em MB, da partição Windows: "
+set /p disco="Defina qual disco sera utilizado: "
+set /p windows="Defina o tamanho, em MB, da particao Windows: "
 echo.
 echo Disco escolhido: !disco!
-echo Tamanho da partição UEFI: !efi! MB
-echo Tamanho da partição Windows: !windows! MB
-echo Tamanho da partição Dados Pessoais: Restante do disco.
+echo Tamanho da particao UEFI: !efi! MB
+echo Tamanho da particao Windows: !windows! MB
+echo Tamanho da particao Dados Pessoais: Restante do disco.
 echo.
 set /p continue=". Deseja continuar o procedimento? (S/N): "
 
@@ -304,7 +304,7 @@ if "!continue!"=="S" (
 ) else if /i "!continue!"=="N" (
     goto uefi_menu
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto uefi_menu
 )
@@ -329,16 +329,16 @@ goto uefi_menu
 cls
 echo.
 echo ========================================
-echo   Criando as partições no modo UEFI...
+echo   Criando as particoes no modo UEFI...
 echo ========================================
 echo.
-set /p disco="Defina qual disco será utilizado: "
-set /p recovery="Defina o tamanho, em MB, da partição Recovery: "
+set /p disco="Defina qual disco sera utilizado: "
+set /p recovery="Defina o tamanho, em MB, da particao Recovery: "
 echo.
 echo Disco escolhido: !disco!
-echo Tamanho da partição UEFI: !efi! MB
-echo Tamanho da partição Recovery: !recovery! MB
-echo Tamanho da partição Windows: Restante do disco.
+echo Tamanho da particao UEFI: !efi! MB
+echo Tamanho da particao Recovery: !recovery! MB
+echo Tamanho da particao Windows: Restante do disco.
 
 echo.
 set /p continue=". Deseja continuar o procedimento? (S/N): "
@@ -352,7 +352,7 @@ if "!continue!"=="S" (
 ) else if /i "!continue!"=="N" (
     goto uefi_menu
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto uefi_menu
 )
@@ -379,19 +379,19 @@ goto uefi_menu
 cls
 echo.
 echo ========================================
-echo   Criando as partições no modo UEFI...
+echo   Criando as particoes no modo UEFI...
 echo ========================================
 echo.
-set /p disco="Defina qual disco será utilizado: "
+set /p disco="Defina qual disco sera utilizado: "
 
-set /p recovery="Defina o tamanho, em MB, da partição Recovery: "
-set /p windows="Defina o tamanho, em MB, da partição Windows: "
+set /p recovery="Defina o tamanho, em MB, da particao Recovery: "
+set /p windows="Defina o tamanho, em MB, da particao Windows: "
 echo.
 echo Disco escolhido: !disco!
-echo Tamanho da partição UEFI: !efi! MB
-echo Tamanho da partição Recovery: !recovery! MB
-echo Tamanho da partição Windows: !windows! MB
-echo Tamanho da partição Dados Pessoais: Restante do disco.
+echo Tamanho da particao UEFI: !efi! MB
+echo Tamanho da particao Recovery: !recovery! MB
+echo Tamanho da particao Windows: !windows! MB
+echo Tamanho da particao Dados Pessoais: Restante do disco.
 
 echo.
 set /p continue=". Deseja continuar o procedimento? (S/N): "
@@ -405,7 +405,7 @@ if "!continue!"=="S" (
 ) else if /i "!continue!"=="N" (
     goto uefi_menu
 ) else (
-    echo Opção inválida. Tente novamente.
+    echo Opcao invalida. Tente novamente.
     timeout /t 3 >nul
     goto uefi_menu
 )

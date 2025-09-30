@@ -1,9 +1,0 @@
-Windows Registry Editor Version 5.00
-
-[HKEY_CLASSES_ROOT\Directory\Background\shell\Reiniciar]
-@="Reinicia o Computador"
-"Icon"="C:\\Windows\\System32\\shell32.dll,112"
-
-[HKEY_CLASSES_ROOT\Directory\Background\shell\Reiniciar\command]
-@="shutdown /r /t 0"
- 

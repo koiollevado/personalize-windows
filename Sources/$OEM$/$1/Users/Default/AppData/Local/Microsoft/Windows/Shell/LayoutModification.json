@@ -1,0 +1,10 @@
+{
+  "layoutModification": {
+    "version": 1,
+    "defaultLayoutOverride": {
+      "startMenuLayout": {
+        "groups": []
+      }
+    }
+  }
+}

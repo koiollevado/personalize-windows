@@ -18,6 +18,7 @@ function New-LiteTheme {
     $ThemeFile = "$ThemesPath\$ThemeName.theme"
 
 @"
+
 ; Copyright © Microsoft Corp.
 
 [Theme]
@@ -119,7 +120,7 @@ Write-Host "     GERENCIADOR DE TEMAS LITE  " -ForegroundColor Cyan
 Write-Host "===============================" -ForegroundColor DarkCyan
 Write-Host ""
 Write-Host "1 - Tema Azul Claro   - 0x00CCCCFF"
-Write-Host "2 - Tema Azul Claro Opaco - 0xFFCCCCFF"
+Write-Host "2 - Tema Azul Opaco   - 0xFFCCCCFF"
 Write-Host "3 - Tema Escuro       - 0x00404040"
 Write-Host "4 - Cinza Neutro  - 0xFFB0B0B0"
 Write-Host "5 - Cinza Claro   - 0xFFD3D3D3"
@@ -136,7 +137,7 @@ switch ($opcao) {
     "4" { New-LiteTheme -ThemeName "LiteGrayNeutral"-BorderColor "0xFFB0B0B0" -Mode "Light" }
     "5" { New-LiteTheme -ThemeName "LiteGrayLight"  -BorderColor "0xFFD3D3D3" -Mode "Light" }
     "6" { New-LiteTheme -ThemeName "LiteGrayMedium" -BorderColor "0xFFA9A9A9" -Mode "Light" }
-    "7" { New-LiteTheme -ThemeName "LiteGrayDark"   -BorderColor "0xFF696969" -Mode "Dark" }
+    "7" { New-LiteTheme -ThemeName "LiteGrayDark"   -BorderColor "0xFF696969" -Mode "Light" }
     "8" { Restore-DefaultTheme; exit }
     default { Write-Host "Opção inválida. Encerrando..." -ForegroundColor Red; exit }
 }

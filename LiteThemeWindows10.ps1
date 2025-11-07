@@ -26,7 +26,7 @@ DisplayName=@%SystemRoot%\System32\themeui.dll,-2060
 SetLogonBackground=0
 
 [Control Panel\Desktop]
-Wallpaper=
+Wallpaper=%SystemRoot%\web\wallpaper\Windows\img0.jpg
 TileWallpaper=0
 WallpaperStyle=10
 Pattern=

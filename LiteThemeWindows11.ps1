@@ -153,7 +153,7 @@ Write-Host "     GERENCIADOR DE TEMAS LITE  " -ForegroundColor Cyan
 Write-Host "===============================" -ForegroundColor DarkCyan
 Write-Host ""
 Write-Host "1 - Tema Azul Claro (leve e limpo)"
-Write-Host "2 - Tema Marrom Claro (leve e clássico)"
+Write-Host "2 - Tema Cinza Claro (leve e clássico)"
 Write-Host "3 - Tema Escuro (leve e contrastante)"
 Write-Host "4 - Restaurar Tema Padrão do Windows"
 Write-Host ""
@@ -161,7 +161,7 @@ $opcao = Read-Host "Escolha uma opção (1-4)"
 
 switch ($opcao) {
     "1" { New-LiteTheme -ThemeName "LiteBlue" -BorderColor "0X00CCCCFF" -Mode "Light" }
-    "2" { New-LiteTheme -ThemeName "LiteBrown" -BorderColor "0X00B19760" -Mode "Light" }
+    "2" { New-LiteTheme -ThemeName "LiteGray" -BorderColor "0xFFA9A9A9" -Mode "Light" }
     "3" { New-LiteTheme -ThemeName "LiteDark" -BorderColor "0X00404040" -Mode "Dark" }
     "4" { Restore-DefaultTheme; exit }
     default { Write-Host "Opção inválida. Encerrando..." -ForegroundColor Red; exit }
@@ -186,4 +186,5 @@ Set-TaskbarIconSize -SizeChoice $iconChoice
 Write-Host ""
 Write-Host "Operação concluída!" -ForegroundColor Green
 pause
+
 

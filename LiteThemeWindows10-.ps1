@@ -119,7 +119,7 @@ Write-Host "     GERENCIADOR DE TEMAS LITE  " -ForegroundColor Cyan
 Write-Host "===============================" -ForegroundColor DarkCyan
 Write-Host ""
 Write-Host "1 - Tema Azul Claro   - 0x00CCCCFF"
-Write-Host "2 - Tema Marrom Claro - 0x00B19760"
+Write-Host "2 - Tema Azul Claro Opaco - 0xFFCCCCFF"
 Write-Host "3 - Tema Escuro       - 0x00404040"
 Write-Host "4 - Cinza Neutro  - 0xFFB0B0B0"
 Write-Host "5 - Cinza Claro   - 0xFFD3D3D3"
@@ -131,7 +131,7 @@ $opcao = Read-Host "Escolha uma opção (1-8)"
 
 switch ($opcao) {
     "1" { New-LiteTheme -ThemeName "LiteBlue"   -BorderColor "0X00CCCCFF" -Mode "Light" }
-    "2" { New-LiteTheme -ThemeName "LiteBrown"  -BorderColor "0X00B19760" -Mode "Light" }
+    "2" { New-LiteTheme -ThemeName "LiteBrown"  -BorderColor "0xFFCCCCFF" -Mode "Light" }
     "3" { New-LiteTheme -ThemeName "LiteDark"   -BorderColor "0X00404040" -Mode "Dark" }
     "4" { New-LiteTheme -ThemeName "LiteGrayNeutral"-BorderColor "0xFFB0B0B0" -Mode "Light" }
     "5" { New-LiteTheme -ThemeName "LiteGrayLight"  -BorderColor "0xFFD3D3D3" -Mode "Light" }

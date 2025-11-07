@@ -132,7 +132,7 @@ $opcao = Read-Host "Escolha uma opção (1-8)"
 
 switch ($opcao) {
     "1" { New-LiteTheme -ThemeName "LiteBlue"   -BorderColor "0X00CCCCFF" -Mode "Light" }
-    "2" { New-LiteTheme -ThemeName "LiteBrown"  -BorderColor "0xFFCCCCFF" -Mode "Light" }
+    "2" { New-LiteTheme -ThemeName "LiteBlueOpaco"  -BorderColor "0xFFCCCCFF" -Mode "Light" }
     "3" { New-LiteTheme -ThemeName "LiteDark"   -BorderColor "0X00404040" -Mode "Dark" }
     "4" { New-LiteTheme -ThemeName "LiteGrayNeutral"-BorderColor "0xFFB0B0B0" -Mode "Light" }
     "5" { New-LiteTheme -ThemeName "LiteGrayLight"  -BorderColor "0xFFD3D3D3" -Mode "Light" }

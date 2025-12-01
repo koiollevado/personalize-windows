@@ -11,14 +11,26 @@ if exist "X:\script-diskpart.txt" del /f /q "X:\script-diskpart.txt"
 :: OBTER LISTA DE DISCOS
 :: ============================================================
 if exist "X:\lista-disco.txt" del /f /q "X:\lista-disco.txt"
-echo list disk | diskpart > X:\lista-disco.txt
+(
+echo.
+echo --------------------------------------------------------
+echo             D I S C O S    L I S T A D O S
+echo --------------------------------------------------------
+echo   Disco N    Status         Tam.       Livre       GPT
+echo   -------    ------         -------    -----       ---
+echo.
+::echo list disk | diskpart | findstr /r /c:"^ *Disco [0-9][0-9]* "
+echo list disk | diskpart | find "B"
+echo.
+echo --------------------------------------------------------
+) > X:\lista-disco.txt
 
 cls
 echo ================================
 echo     LISTA DE DISCOS DO SISTEMA
 echo ================================
 echo.
-echo O arquivo lista-disco.txt foi aberto.
+echo O arquivo lista-disco.txt foi criado.
 echo Utilize-o para identificar o numero do disco.
 echo.
 timeout /t 2 >nul
@@ -446,3 +458,4 @@ goto EXECUTAR
 
 :SAIR
 exit /b
+

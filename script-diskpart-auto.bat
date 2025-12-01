@@ -30,7 +30,7 @@ echo ================================
 echo     LISTA DE DISCOS DO SISTEMA
 echo ================================
 echo.
-echo O arquivo lista-disco.txt foi aberto.
+echo O arquivo lista-disco.txt foi criado.
 echo Utilize-o para identificar o numero do disco.
 echo.
 timeout /t 2 >nul
@@ -461,4 +461,5 @@ if exist X:\script-diskpart.txt (
 diskpart /s X:\script-diskpart.txt
 )
 exit /b
+
 

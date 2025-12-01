@@ -10,7 +10,19 @@ if exist "X:\script-diskpart.txt" del /f /q "X:\script-diskpart.txt"
 :: ============================================================
 :: OBTER LISTA DE DISCOS
 :: ============================================================
-echo list disk | diskpart > X:\lista-disco.txt
+if exist "X:\lista-disco.txt" del /f /q "X:\lista-disco.txt"
+(
+echo.
+echo --------------------------------------------------------
+echo             D I S C O S    L I S T A D O S
+echo --------------------------------------------------------
+echo   Disco N    Status         Tam.       Livre       GPT
+echo   -------    ------         -------    -----       ---
+echo.
+echo list disk | diskpart | find "B"
+echo.
+echo --------------------------------------------------------
+) > X:\lista-disco.txt
 
 cls
 echo ================================
@@ -106,7 +118,7 @@ goto MENU_GPT
 set disco=
 cls
 echo =======================================
-echo   Defina o número do disco utilizado:
+echo   Defina o nÃºmero do disco utilizado:
 echo =======================================
 set /p disco="Disco: "
 if not defined disco goto DEFINIR_DISCO
@@ -118,21 +130,21 @@ goto %1
 :: ============================================================
 :ASK_WINDOWS
 cls
-echo Informe o tamanho da partição Windows em GB:
+echo Informe o tamanho da partiÃ§Ã£o Windows em GB:
 set /p win_gb="GB: "
 set /a win_mb=win_gb*1024
 goto %1
 
 :ASK_DADOS
 cls
-echo Informe o tamanho da partição Dados em GB:
+echo Informe o tamanho da partiÃ§Ã£o Dados em GB:
 set /p dados_gb="GB: "
 set /a dados_mb=dados_gb*1024
 goto %1
 
 :ASK_RECOVERY
 cls
-echo Informe o tamanho da partição Recovery em GB:
+echo Informe o tamanho da partiÃ§Ã£o Recovery em GB:
 set /p rec_gb="GB: "
 set /a rec_mb=rec_gb*1024
 goto %1
@@ -372,6 +384,7 @@ timeout /t 2 >nul
 diskpart /s X:\script-diskpart.txt
 
 echo.
-echo Processo concluído.
+echo Processo concluÃ­do.
 pause
 exit /b
+

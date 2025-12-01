@@ -11,7 +11,19 @@ if exist "X:\script-diskpart.txt" del /f /q "X:\script-diskpart.txt"
 :: OBTER LISTA DE DISCOS
 :: ============================================================
 if exist "X:\lista-disco.txt" del /f /q "X:\lista-disco.txt"
-echo list disk | diskpart > X:\lista-disco.txt
+(
+echo.
+echo --------------------------------------------------------
+echo             D I S C O S    L I S T A D O S
+echo --------------------------------------------------------
+echo   Disco N    Status         Tam.       Livre       GPT
+echo   -------    ------         -------    -----       ---
+echo.
+::echo list disk | diskpart | findstr /r /c:"^ *Disco [0-9][0-9]* "
+echo list disk | diskpart | find "B"
+echo.
+echo --------------------------------------------------------
+) > X:\lista-disco.txt
 
 cls
 echo ================================
@@ -449,3 +461,4 @@ if exist X:\script-diskpart.txt (
 diskpart /s X:\script-diskpart.txt
 )
 exit /b
+

@@ -1,163 +1,239 @@
-# ============================================
-# TEMA LOCAL - sem uso de pastas do sistema
-# ============================================
+# ============================================================
+#  TEMA LEVE PERSONALIZADO ‚Äì WINDOWS 10 / 11
+# ============================================================
 
-# Caminho local (mesma pasta do script)
-$LocalPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ThemesPath = "$LocalPath\Themes"
-if (!(Test-Path $ThemesPath)) { New-Item -ItemType Directory -Path $ThemesPath | Out-Null }
+Clear-Host
 
-# FunÁ„o: cria e aplica tema leve
+# ============================================================
+# CAMINHOS LOCAIS
+# ============================================================
+
+$LocalPath  = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ThemesPath = Join-Path $LocalPath "Themes"
+
+if (-not (Test-Path $ThemesPath)) {
+    New-Item -ItemType Directory -Path $ThemesPath | Out-Null
+}
+
+# ============================================================
+# FUN√á√ÉO: CRIAR E APLICAR TEMA LEVE
+# ============================================================
+
 function New-LiteTheme {
     param (
         [string]$ThemeName,
-        [string]$BorderColor,
-        [string]$Mode = "Light"
+        [int]$AccentColor,
+        [int]$AppsTheme,
+        [int]$SystemTheme
     )
 
-    $ThemeFile = "$ThemesPath\$ThemeName.theme"
+    $ThemeFile = Join-Path $ThemesPath "$ThemeName.theme"
 
 @"
-
-; Copyright © Microsoft Corp.
+; ============================================================
+; TEMA LEVE PERSONALIZADO - WINDOWS 10 / 11
+; ============================================================
 
 [Theme]
-DisplayName=@%SystemRoot%\System32\themeui.dll,-2060
+DisplayName=$ThemeName
 SetLogonBackground=0
 
 [Control Panel\Desktop]
-Wallpaper=%SystemRoot%\web\wallpaper\Windows\img0.jpg
-TileWallpaper=0
+Wallpaper=
 WallpaperStyle=10
-Pattern=
+TileWallpaper=0
 
 [VisualStyles]
 Path=%ResourceDir%\Themes\Aero\Aerolite.msstyles
 ColorStyle=NormalColor
 Size=NormalSize
 AutoColorization=0
-ColorizationColor=$BorderColor
-SystemMode=$Mode
-AppMode=$Mode
-
-[boot]
-SCRNSAVE.EXE=
-
-[MasterThemeSelector]
-MTSM=RJSPBS
+ColorizationColor=$AccentColor
 
 [Sounds]
 SchemeName=@%SystemRoot%\System32\mmres.dll,-800
 
+[MasterThemeSelector]
+MTSM=RJSPBS
 "@ | Out-File -Encoding ASCII $ThemeFile
 
-    Write-Host "Tema '$ThemeName' criado com sucesso em '$ThemesPath'." -ForegroundColor Green
-    Start-Process -FilePath $ThemeFile
-    Write-Host "Aplicando o tema $ThemeName..." -ForegroundColor Cyan
+    Write-Host "Tema '$ThemeName' criado com sucesso." -ForegroundColor Green
 
-    # Define modo claro/escuro no registro
-    if ($Mode -eq "Dark") {
-        reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f | Out-Null
-        reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f | Out-Null
-    } else {
-        reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 1 /f | Out-Null
-        reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 1 /f | Out-Null
-    }
+    # ============================
+    # APLICAR TEMA
+    # ============================
 
-    # Reinicia o Explorer automaticamente
-    Write-Host "Reiniciando o Explorer para aplicar as alteraÁıes..." -ForegroundColor Yellow
-    Stop-Process -Name explorer -Force
-    Start-Process explorer.exe
+    Start-Process $ThemeFile
+    Start-Sleep -Seconds 1
+
+    # ============================
+    # DEFINIR MODO CLARO / ESCURO
+    # ============================
+
+    $Personalize = "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+
+    reg add $Personalize /v AppsUseLightTheme   /t REG_DWORD /d $AppsTheme   /f | Out-Null
+    reg add $Personalize /v SystemUsesLightTheme /t REG_DWORD /d $SystemTheme /f | Out-Null
+
+    # ============================
+    # APLICAR ACCENT COLOR
+    # ============================
+
+    reg add "HKCU\Software\Microsoft\Windows\DWM" /v ColorPrevalence /t REG_DWORD /d 1 /f | Out-Null
+    reg add "HKCU\Software\Microsoft\Windows\DWM" /v AccentColor /t REG_DWORD /d $AccentColor /f | Out-Null
+
+    Restart-Explorer
 }
 
-# FunÁ„o: restaurar tema padr„o
+# ============================================================
+# FUN√á√ÉO: RESTAURAR TEMA PADR√ÉO DO WINDOWS
+# ============================================================
+
 function Restore-DefaultTheme {
-    Write-Host "Restaurando tema padr„o do Windows..." -ForegroundColor Cyan
+    Write-Host "Restaurando tema padr√£o do Windows..." -ForegroundColor Cyan
+
     Start-Process "$env:SystemRoot\Resources\Themes\aero.theme"
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 1 /f | Out-Null
-    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 1 /f | Out-Null
-    Write-Host "Tema padr„o restaurado." -ForegroundColor Green
-    Stop-Process -Name explorer -Force
-    Start-Process explorer.exe
+
+    $Personalize = "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+    reg add $Personalize /v AppsUseLightTheme   /t REG_DWORD /d 1 /f | Out-Null
+    reg add $Personalize /v SystemUsesLightTheme /t REG_DWORD /d 1 /f | Out-Null
+
+    Restart-Explorer
+
+    Write-Host "Tema padr√£o restaurado com sucesso." -ForegroundColor Green
 }
 
-# FunÁ„o: ajustar tamanho dos Ìcones da barra de tarefas
+# ============================================================
+# FUN√á√ÉO: AJUSTAR TAMANHO DOS √çCONES DA BARRA DE TAREFAS
+# ============================================================
+
 function Set-TaskbarIconSize {
-    param ([string]$SizeChoice)
+    param ([string]$Choice)
 
     $RegPath = "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
-    switch ($SizeChoice) {
-        "1" {
-            reg add $RegPath /v TaskbarSmallIcons /t REG_DWORD /d 2 /f | Out-Null
-            Write-Host "Õcones pequenos aplicados ‡ barra de tarefas." -ForegroundColor Green
-        }
-        "2" {
-            reg add $RegPath /v TaskbarSmallIcons /t REG_DWORD /d 1 /f | Out-Null
-            Write-Host "Õcones mÈdios (padr„o) aplicados ‡ barra de tarefas." -ForegroundColor Green
-        }
-        "3" {
-            reg add $RegPath /v TaskbarSmallIcons /t REG_DWORD /d 0 /f | Out-Null
-            Write-Host "Õcones grandes aplicados ‡ barra de tarefas." -ForegroundColor Green
-        }
+
+    switch ($Choice) {
+        "1" { $Value = 1; $Label = "Pequenos" }
+        "2" { $Value = 0; $Label = "M√©dios (padr√£o)" }
+        "3" { $Value = 2; $Label = "Grandes" }
         default {
-            Write-Host "OpÁ„o inv·lida para tamanho de Ìcones." -ForegroundColor Red
+            Write-Host "Op√ß√£o inv√°lida." -ForegroundColor Red
             return
         }
     }
 
-    Write-Host "Reiniciando o Explorer para aplicar as alteraÁıes..." -ForegroundColor Yellow
+    reg add $RegPath /v TaskbarSmallIcons /t REG_DWORD /d $Value /f | Out-Null
+    Write-Host "√çcones da barra de tarefas definidos como: $Label" -ForegroundColor Green
+
+    Restart-Explorer
+}
+
+# ============================================================
+# FUN√á√ÉO AUXILIAR
+# ============================================================
+
+function Restart-Explorer {
     Stop-Process -Name explorer -Force
     Start-Process explorer.exe
 }
 
-# ============================================
+# ============================================================
 # MENU PRINCIPAL
-# ============================================
+# ============================================================
 
-Clear-Host
-Write-Host "===============================" -ForegroundColor DarkCyan
-Write-Host "     GERENCIADOR DE TEMAS LITE  " -ForegroundColor Cyan
-Write-Host "===============================" -ForegroundColor DarkCyan
-Write-Host ""
-Write-Host "1 - Tema Azul Claro   - 0x00CCCCFF"
-Write-Host "2 - Tema Azul Opaco   - 0xFFCCCCFF"
-Write-Host "3 - Tema Escuro       - 0x00404040"
-Write-Host "4 - Cinza Neutro  - 0xFFB0B0B0"
-Write-Host "5 - Cinza Claro   - 0xFFD3D3D3"
-Write-Host "6 - Cinza MÈdio   - 0xFFA9A9A9"
-Write-Host "7 - Cinza Escuro  - 0xFF696969"
-Write-Host "8 - Restaurar Tema Padr„o do Windows"
-Write-Host ""
-$opcao = Read-Host "Escolha uma opÁ„o (1-8)"
+Write-Host "==============================================="
+Write-Host "  PERSONALIZA√á√ÉO DO WINDOWS ‚Äì TEMA LEVE"
+Write-Host "==============================================="
+Write-Host
+Write-Host "[1] Criar e aplicar tema leve personalizado"
+Write-Host "[2] Restaurar tema padr√£o do Windows"
+Write-Host
 
-switch ($opcao) {
-    "1" { New-LiteTheme -ThemeName "LiteBlue"   -BorderColor "0X00CCCCFF" -Mode "Light" }
-    "2" { New-LiteTheme -ThemeName "LiteBlueOpaco"  -BorderColor "0xFFCCCCFF" -Mode "Light" }
-    "3" { New-LiteTheme -ThemeName "LiteDark"   -BorderColor "0X00404040" -Mode "Dark" }
-    "4" { New-LiteTheme -ThemeName "LiteGrayNeutral"-BorderColor "0xFFB0B0B0" -Mode "Light" }
-    "5" { New-LiteTheme -ThemeName "LiteGrayLight"  -BorderColor "0xFFD3D3D3" -Mode "Light" }
-    "6" { New-LiteTheme -ThemeName "LiteGrayMedium" -BorderColor "0xFFA9A9A9" -Mode "Light" }
-    "7" { New-LiteTheme -ThemeName "LiteGrayDark"   -BorderColor "0xFF696969" -Mode "Light" }
-    "8" { Restore-DefaultTheme; exit }
-    default { Write-Host "OpÁ„o inv·lida. Encerrando..." -ForegroundColor Red; exit }
+$MainChoice = Read-Host "Escolha uma op√ß√£o"
+
+if ($MainChoice -eq "2") {
+    Restore-DefaultTheme
+    pause
+    exit
 }
 
-# ============================================
-# MENU SECUND¡RIO - TAMANHO DOS ÕCONES DA BARRA DE TAREFAS
-# ============================================
+# ============================================================
+# PALETA DE CORES (ORDENADA)
+# ============================================================
 
-Write-Host ""
-Write-Host "===============================" -ForegroundColor DarkGray
-Write-Host " CONFIGURA«√O DOS ÕCONES DA BARRA DE TAREFAS" -ForegroundColor Yellow
-Write-Host "===============================" -ForegroundColor DarkGray
-Write-Host ""
-Write-Host "1 - Õcones pequenos"
-Write-Host "2 - Õcones mÈdios (padr„o)"
-Write-Host "3 - Õcones grandes"
-Write-Host ""
-$iconChoice = Read-Host "Escolha uma opÁ„o (1-3)"
-Set-TaskbarIconSize -SizeChoice $iconChoice
+$Colors = @(
+    @{ Name="Azul 1"; Value=0x00003BD9 }
+    @{ Name="Azul 2"; Value=0x00008BFF }
+    @{ Name="Azul 3"; Value=0x0000E6FF }
+    @{ Name="Azul 4"; Value=0x0001B9FF }
+    @{ Name="Azul 5"; Value=0x001050CA }
+    @{ Name="Azul 6"; Value=0x002A4EF8 }
+    @{ Name="Azul 7"; Value=0x00000080 }
+    @{ Name="Azul 8"; Value=0x002311E8 }
+    @{ Name="Azul 9"; Value=0x004444FC }
+    @{ Name="Verde 1"; Value=0x00008000 }
+    @{ Name="Verde 2"; Value=0x0000CC66 }
+    @{ Name="Verde 3"; Value=0x00137A11 }
+    @{ Name="Verde 4"; Value=0x003E8614 }
+    @{ Name="Verde 5"; Value=0x00202020 }
+    @{ Name="Cinza 1"; Value=0x0061737E }
+    @{ Name="Cinza 2"; Value=0x00484A4B }
+    @{ Name="Cinza 3"; Value=0x00545E52 }
+)
 
-Write-Host ""
-Write-Host "OperaÁ„o concluÌda!" -ForegroundColor Green
+$Colors = $Colors | Sort-Object Name
+$i = 1
+foreach ($c in $Colors) {
+    $c.Id = $i
+    Write-Host "[$i] $($c.Name)"
+    $i++
+}
+
+$ColorChoice = Read-Host "Escolha a cor"
+$Selected = $Colors | Where-Object { $_.Id -eq [int]$ColorChoice }
+
+if (-not $Selected) {
+    Write-Host "Cor inv√°lida." -ForegroundColor Red
+    exit
+}
+
+# ============================================================
+# ESCOLHA DO MODO CLARO / ESCURO
+# ============================================================
+
+Write-Host
+Write-Host "[1] Tema Claro"
+Write-Host "[2] Tema Escuro"
+$ThemeChoice = Read-Host "Escolha o modo"
+
+switch ($ThemeChoice) {
+    "1" { $AppsTheme = 1; $SystemTheme = 1; $ThemeName = "Tema-Leve-Personalizado" }
+    "2" { $AppsTheme = 0; $SystemTheme = 0; $ThemeName = "Tema-Escuro-Personalizado" }
+    default { exit }
+}
+
+# ============================================================
+# TAMANHO DOS √çCONES
+# ============================================================
+
+Write-Host
+Write-Host "1 - √çcones pequenos"
+Write-Host "2 - √çcones m√©dios"
+Write-Host "3 - √çcones grandes"
+$IconChoice = Read-Host "Escolha o tamanho"
+
+Set-TaskbarIconSize -Choice $IconChoice
+
+# ============================================================
+# CRIAR E APLICAR TEMA
+# ============================================================
+
+New-LiteTheme `
+    -ThemeName   $ThemeName `
+    -AccentColor $Selected.Value `
+    -AppsTheme   $AppsTheme `
+    -SystemTheme $SystemTheme
+
+Write-Host
+Write-Host "Configura√ß√£o conclu√≠da com sucesso." -ForegroundColor Green
 pause

@@ -19,19 +19,21 @@ echo --------------------------------------------------------
 echo   Disco N    Status         Tam.       Livre       GPT
 echo   -------    ------         -------    -----       ---
 echo.
-::echo list disk | diskpart | findstr /r /c:"^ *Disco [0-9][0-9]* "
 echo list disk | diskpart | find "B"
 echo.
 echo --------------------------------------------------------
 ) > X:\lista-disco.txt
 
 cls
-echo ================================
-echo     LISTA DE DISCOS DO SISTEMA
-echo ================================
 echo.
-echo O arquivo lista-disco.txt foi criado.
-echo Utilize-o para identificar o numero do disco.
+echo =============================================
+echo           LISTA DE DISCOS DO SISTEMA
+echo =============================================
+echo.
+echo      O arquivo lista-disco.txt foi aberto.
+echo    Use-o para identificar o numero do disco.
+echo.
+echo =============================================
 echo.
 timeout /t 2 >nul
 notepad X:\lista-disco.txt
@@ -41,13 +43,14 @@ notepad X:\lista-disco.txt
 :: ============================================================
 :MENU_INICIAL
 cls
-echo ================================
-echo     Selecione o tipo de disco
-echo ================================
-echo 1. MBR (Legacy)
-echo 2. GPT (UEFI)
-echo 0. Sair
-echo ================================
+echo.
+echo =============================================
+echo  Selecione o tipo de particionamento de disco
+echo =============================================
+echo               1. MBR (Legacy)
+echo               2. GPT (UEFI)
+echo               0. Sair
+echo =============================================
 set /p tipo="Escolha: "
 
 if "%tipo%"=="1" goto MENU_MBR
@@ -64,14 +67,15 @@ goto MENU_INICIAL
 :MENU_MBR
 cls
 set esquema=
-echo ==========================================
-echo     Escolha o tipo de particionamento MBR
-echo ==========================================
-echo 1. System + Windows
-echo 2. System + Windows + Dados
-echo 3. System + Windows + Linux
-echo M. Voltar
-echo ==========================================
+echo.
+echo =============================================
+echo   Escolha o particionamento do disco em MBR
+echo =============================================
+echo          1. System + Windows
+echo          2. System + Windows + Dados
+echo          3. System + Windows + Linux
+echo          M. Voltar
+echo =============================================
 set /p esquema="Escolha: "
 
 if "%esquema%"=="1" goto MBR_SW
@@ -90,15 +94,16 @@ goto MENU_MBR
 :MENU_GPT
 cls
 set esquema=
-echo ==========================================
-echo      Escolha o particionamento GPT
-echo ==========================================
-echo 1. EFI + Windows
-echo 2. EFI + Windows + Dados
-echo 3. EFI + Windows + Recovery
-echo 4. EFI + Windows + Recovery + Dados
-echo M. Voltar
-echo ==========================================
+echo.
+echo =============================================
+echo   Escolha o particionamento do disco em GPT
+echo =============================================
+echo      1. EFI + Windows
+echo      2. EFI + Windows + Dados
+echo      3. EFI + Windows + Recovery
+echo      4. EFI + Windows + Recovery + Dados
+echo      M. Voltar
+echo =============================================
 set /p esquema="Escolha: "
 
 if "%esquema%"=="1" goto GPT_EW
@@ -118,10 +123,12 @@ goto MENU_GPT
 :DEFINIR_DISCO
 set disco=
 cls
-echo =======================================
-echo   Defina o numero do disco utilizado:
-echo =======================================
-set /p disco="Disco: "
+echo.
+echo =============================================
+echo          Defina o disco utilizado
+echo =============================================
+echo.
+set /p disco="         Informe o numero do disco: "
 if not defined disco goto DEFINIR_DISCO
 goto %1
 
@@ -131,22 +138,34 @@ goto %1
 :: ============================================================
 :ASK_WINDOWS
 cls
-echo Informe o tamanho da particao Windows em GB:
-set /p win_gb="GB: "
+echo.
+echo =============================================
+echo         Defina a particao Windows
+echo =============================================
+echo.
+set /p win_gb="          Informe o tamanho em GB: "
 set /a win_mb=win_gb*1024
 goto %1
 
 :ASK_DADOS
 cls
-echo Informe o tamanho da particao Dados em GB:
-set /p dados_gb="GB: "
+echo.
+echo =============================================
+echo          Defina a particao Dados
+echo =============================================
+echo.
+set /p dados_gb="          Informe o tamanho em GB: "
 set /a dados_mb=dados_gb*1024
 goto %1
 
 :ASK_RECOVERY
 cls
-echo Informe o tamanho da particao Recovery em GB:
-set /p rec_gb="GB: "
+echo.
+echo =============================================
+echo         Defina a particao Recovery
+echo =============================================
+echo.
+set /p rec_gb="          Informe o tamanho em GB: "
 set /a rec_mb=rec_gb*1024
 goto %1
 
@@ -394,15 +413,15 @@ goto EXECUTAR
 
 :EXECUTAR
 cls
-echo =======================================
-echo       RESUMO DA CONFIGURACAO
-echo =======================================
+echo =============================================
+echo            RESUMO DA CONFIGURACAO
+echo =============================================
 echo.
-echo Tipo de disco: !tipo_disco!
-echo Layout escolhido: !layout!
+echo Particionamento: !tipo_disco!
+echo Particoes escolhidas: !layout!
 echo Disco selecionado: !disco!
 echo.
-echo ---------------------------------------
+echo ---------------------------------------------
 
 if defined system_mb (
     echo Particao System: !system_mb! MB
@@ -441,12 +460,12 @@ if !layout!=="EFI + Windows + Recovery + Dados" (
 )
 
 
-echo ---------------------------------------
-echo Deseja manter esta configuracao
-echo ---------------------------------------
-echo S = Sim
-echo N = Nao (voltar ao menu)
-echo =======================================
+echo =============================================
+echo         Deseja manter esta configuracao
+echo ---------------------------------------------
+echo           S = Sim
+echo           N = Nao (voltar ao menu)
+echo =============================================
 set /p conf="Opcao: "
 
 if /i "!conf!"=="N" goto MENU_INICIAL
@@ -457,5 +476,9 @@ timeout /t 2 >nul
 goto EXECUTAR
 
 :SAIR
+echo Saindo . . .
+timeout /t 3 >nul
 exit /b
+
+
 

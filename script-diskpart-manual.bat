@@ -11,6 +11,7 @@ if exist "X:\script-diskpart.txt" del /f /q "X:\script-diskpart.txt"
 :: OBTER LISTA DE DISCOS
 :: ============================================================
 if exist "X:\lista-disco.txt" del /f /q "X:\lista-disco.txt"
+
 (
 echo.
 echo --------------------------------------------------------
@@ -35,7 +36,7 @@ echo    Use-o para identificar o numero do disco.
 echo.
 echo =============================================
 echo.
-timeout /t 2 >nul
+
 notepad X:\lista-disco.txt
 
 :: ============================================================
@@ -58,7 +59,7 @@ if "%tipo%"=="2" goto MENU_GPT
 if "%tipo%"=="0" goto SAIR
 
 echo Opcao invalida.
-timeout /t 2 >nul
+
 goto MENU_INICIAL
 
 :: ============================================================
@@ -84,7 +85,7 @@ if "%esquema%"=="3" goto MBR_SWL
 if /i "%esquema%"=="M" goto MENU_INICIAL
 
 echo Opcao invalida.
-timeout /t 2 >nul
+
 goto MENU_MBR
 
 
@@ -113,7 +114,7 @@ if "%esquema%"=="4" goto GPT_EWRD
 if /i "%esquema%"=="M" goto MENU_INICIAL
 
 echo Opcao invalida.
-timeout /t 2 >nul
+
 goto MENU_GPT
 
 
@@ -174,7 +175,7 @@ goto %1
 :: MBR - SYSTEM + WINDOWS
 :: ============================================================
 :MBR_SW
-set %system_mb%=100
+set system_mb=100
 set tipo_disco=MBR
 set layout="System + Windows"
 
@@ -186,7 +187,7 @@ goto :eof
 echo select disk %disco%
 echo clean
 echo convert mbr
-echo create partition primary size=%%system_mb%%
+echo create partition primary size=%system_mb%
 echo format quick fs=ntfs label="System"
 echo assign letter=S
 echo active
@@ -202,7 +203,7 @@ goto EXECUTAR
 :: MBR - SYSTEM + WINDOWS + DADOS
 :: ============================================================
 :MBR_SWD
-set %system_mb%=100
+set system_mb=100
 set tipo_disco=MBR
 set layout="System + Windows + Dados"
 
@@ -218,7 +219,7 @@ goto :eof
 echo select disk %disco%
 echo clean
 echo convert mbr
-echo create partition primary size=%%system_mb%%
+echo create partition primary size=%system_mb%
 echo format quick fs=ntfs label="System"
 echo assign letter=S
 echo active
@@ -237,7 +238,7 @@ goto EXECUTAR
 :: MBR - SYSTEM + WINDOWS + LINUX
 :: ============================================================
 :MBR_SWL
-set %system_mb%=100
+set system_mb=100
 set tipo_disco=MBR
 set layout="System + Windows + Linux"
 
@@ -253,7 +254,7 @@ goto :eof
 echo select disk %disco%
 echo clean
 echo convert mbr
-echo create partition primary size=%%system_mb%%
+echo create partition primary size=%system_mb%
 echo format quick fs=ntfs label="System"
 echo assign letter=S
 echo active
@@ -472,12 +473,10 @@ if /i "!conf!"=="N" goto MENU_INICIAL
 if /i "!conf!"=="S" goto SAIR
 
 echo Opcao invalida.
-timeout /t 2 >nul
+
 goto EXECUTAR
 
 :SAIR
-echo Saindo . . .
-timeout /t 3 >nul
 exit /b
 
 

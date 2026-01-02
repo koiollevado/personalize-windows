@@ -174,7 +174,7 @@ goto %1
 :: MBR - SYSTEM + WINDOWS
 :: ============================================================
 :MBR_SW
-set %system_mb%=100
+set system_mb=100
 set tipo_disco=MBR
 set layout="System + Windows"
 
@@ -186,7 +186,7 @@ goto :eof
 echo select disk %disco%
 echo clean
 echo convert mbr
-echo create partition primary size=%%system_mb%%
+echo create partition primary size=%system_mb%
 echo format quick fs=ntfs label="System"
 echo assign letter=S
 echo active
@@ -202,7 +202,7 @@ goto EXECUTAR
 :: MBR - SYSTEM + WINDOWS + DADOS
 :: ============================================================
 :MBR_SWD
-set %system_mb%=100
+set system_mb=100
 set tipo_disco=MBR
 set layout="System + Windows + Dados"
 
@@ -218,7 +218,7 @@ goto :eof
 echo select disk %disco%
 echo clean
 echo convert mbr
-echo create partition primary size=%%system_mb%%
+echo create partition primary size=%system_mb%
 echo format quick fs=ntfs label="System"
 echo assign letter=S
 echo active
@@ -237,7 +237,7 @@ goto EXECUTAR
 :: MBR - SYSTEM + WINDOWS + LINUX
 :: ============================================================
 :MBR_SWL
-set %system_mb%=100
+set system_mb=100
 set tipo_disco=MBR
 set layout="System + Windows + Linux"
 
@@ -253,7 +253,7 @@ goto :eof
 echo select disk %disco%
 echo clean
 echo convert mbr
-echo create partition primary size=%%system_mb%%
+echo create partition primary size=%system_mb%
 echo format quick fs=ntfs label="System"
 echo assign letter=S
 echo active

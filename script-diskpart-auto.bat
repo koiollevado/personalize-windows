@@ -11,6 +11,7 @@ if exist "X:\script-diskpart.txt" del /f /q "X:\script-diskpart.txt"
 :: OBTER LISTA DE DISCOS
 :: ============================================================
 if exist "X:\lista-disco.txt" del /f /q "X:\lista-disco.txt"
+
 (
 echo.
 echo --------------------------------------------------------
@@ -35,7 +36,7 @@ echo    Use-o para identificar o numero do disco.
 echo.
 echo =============================================
 echo.
-timeout /t 2 >nul
+
 notepad X:\lista-disco.txt
 
 :: ============================================================
@@ -58,7 +59,7 @@ if "%tipo%"=="2" goto MENU_GPT
 if "%tipo%"=="0" goto SAIR
 
 echo Opcao invalida.
-timeout /t 2 >nul
+
 goto MENU_INICIAL
 
 :: ============================================================
@@ -84,7 +85,7 @@ if "%esquema%"=="3" goto MBR_SWL
 if /i "%esquema%"=="M" goto MENU_INICIAL
 
 echo Opcao invalida.
-timeout /t 2 >nul
+
 goto MENU_MBR
 
 
@@ -113,7 +114,7 @@ if "%esquema%"=="4" goto GPT_EWRD
 if /i "%esquema%"=="M" goto MENU_INICIAL
 
 echo Opcao invalida.
-timeout /t 2 >nul
+
 goto MENU_GPT
 
 
@@ -472,7 +473,7 @@ if /i "!conf!"=="N" goto MENU_INICIAL
 if /i "!conf!"=="S" goto SAIR
 
 echo Opcao invalida.
-timeout /t 2 >nul
+
 goto EXECUTAR
 
 :SAIR
@@ -480,6 +481,3 @@ if exist X:\script-diskpart.txt (
 diskpart /s X:\script-diskpart.txt
 )
 exit /b
-
-
-

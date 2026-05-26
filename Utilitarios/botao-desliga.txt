@@ -1,0 +1,9 @@
+
+
+crie um atalho no desktop e edite esse atalho colocando assim nos devidos campos:
+
+Destino:C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe $Objshell = New-Object -COMObject "Shell.Application" ; $Objshell.ShutdownWindows()
+
+Executar:Minimizado
+
+caso deseje, altere o ícone para a versão que desejar.

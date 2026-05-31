@@ -101,7 +101,7 @@
 </RunSynchronousCommand>
 <RunSynchronousCommand wcm:action="add">
     <Order>18</Order>
-    <Path>cmd.exe /c if exist X:\partitioning.txt do ( diskpart /s X:\partitioning.txt )</Path>
+    <Path>cmd.exe /c if exist X:\partitioning.txt ( diskpart /s X:\partitioning.txt )</Path>
 </RunSynchronousCommand>
 </RunSynchronous>
 </component>

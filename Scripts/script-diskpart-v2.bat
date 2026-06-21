@@ -1,50 +1,126 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 
 :MENU_INICIAL
-:: ============================================================
-:: OBTER LISTA DE DISCOS
-:: ============================================================
-if exist "X:\lista-disco.txt" del /f /q "X:\lista-disco.txt"
-echo list disk | diskpart > X:\lista-disco.txt
 
 :: ============================================================
 :: LIMPAR ARQUIVO ANTIGO
 :: ============================================================
+
 if exist "X:\script-diskpart.txt" del /f /q "X:\script-diskpart.txt"
 
 cls
+echo =============================================
+echo           DETECCAO DE BIOS / UEFI
+echo =============================================
 echo.
-echo --------------------------------------------------------
-echo             D I S C O S    L I S T A D O S
-echo --------------------------------------------------------
-echo   Disco N    Status         Tam.       Livre       GPT
-echo   -------    ------         -------    -----       ---
-echo.
-echo list disk | diskpart | find "B"
-echo.
-echo --------------------------------------------------------
-echo.
-pause 
 
-cls
+REM =========================================================
+REM 1. DETECTAR PELO REGISTRO
+REM =========================================================
+
+set "REG_MODE=DESCONHECIDO"
+
+for /f "tokens=3" %%A in ('
+    reg query HKLM\SYSTEM\CurrentControlSet\Control /v PEFirmwareType 2^>nul ^| find "PEFirmwareType"
+') do (
+    set "FWTYPE=%%A"
+)
+
+if /I "!FWTYPE!"=="0x1" set "REG_MODE=LEGACY"
+if /I "!FWTYPE!"=="0x2" set "REG_MODE=UEFI"
+
+:: echo [REG QUERY]
+:: echo Firmware detectado: !REG_MODE!
+:: echo.
+
+REM =========================================================
+REM 2. DETECTAR PELO BCDEDIT
+REM =========================================================
+
+set "BCD_MODE=DESCONHECIDO"
+
+for /f "tokens=*" %%A in ('
+    bcdedit ^| find /I "path"
+') do (
+    echo %%A | find /I "winload.efi" >nul && set "BCD_MODE=UEFI"
+    echo %%A | find /I "winload.exe" >nul && set "BCD_MODE=LEGACY"
+)
+
+:: echo [BCDEDIT]
+:: echo Firmware detectado: !BCD_MODE!
+:: echo.
+
+REM =========================================================
+REM 3. COMPARAR RESULTADOS
+REM =========================================================
+
+:: echo [COMPARACAO]
+
+if /I "!REG_MODE!"=="!BCD_MODE!" (
+
+::     echo RESULTADO: OS DOIS METODOS CONCORDAM
+::     echo Sistema iniciado em: !REG_MODE!
+    echo.
+
+    REM =====================================================
+    REM 4. SUGESTAO DE PARTICIONAMENTO
+    REM =====================================================
+
+    if /I "!REG_MODE!"=="UEFI" (
+        echo =============================================
+        echo              S U G E S T A O
+        echo ---------------------------------------------
+        echo          Firmware UEFI detectado
+        echo        Utilize particionamento GPT
+        echo =============================================
+    )
+
+    if /I "!REG_MODE!"=="LEGACY" (
+        echo =============================================
+        echo              S U G E S T A O
+        echo ---------------------------------------------
+        echo        Firmware Legacy BIOS detectado
+        echo         Utilize particionamento MBR
+        echo =============================================
+    )
+
+) else (
+    echo.
+    echo =============================================
+    echo      Atencao: DIFERENCA ENTRE OS METODOS
+    echo.
+    echo        REG QUERY = !REG_MODE!
+    echo        BCDEDIT   = !BCD_MODE!
+    echo.
+    echo   Nao foi possivel determinar com seguranca
+    echo        o modo correto de inicializacao.
+    echo =============================================
+)
+
+echo.
+pause
+
+
+
 echo.
 echo =============================================
 echo      Selecione o particionamento de disco
 echo =============================================
 echo               MBR (Legacy)
 echo ---------------------------------------------
-echo          1. System + Windows
-echo          2. System + Windows + Dados
-echo          3. System + Windows + Linux
+echo    1. System + Windows
+echo    2. System + Windows + Dados
+echo    3. System + Windows + Recovery
+echo    4. System + Windows + Recovery + Dados
 echo ---------------------------------------------
 echo               GPT (UEFI)
 echo ---------------------------------------------
-echo      4. EFI + Windows
-echo      5. EFI + Windows + Dados
-echo      6. EFI + Windows + Recovery
-echo      7. EFI + Windows + Recovery + Dados
+echo      5. EFI + Windows
+echo      6. EFI + Windows + Dados
+echo      7. EFI + Windows + Recovery
+echo      8. EFI + Windows + Recovery + Dados
 echo ---------------------------------------------
 echo               0. Sair
 echo =============================================
@@ -53,11 +129,12 @@ set /p esquema="          Escolha: "
 
 if "%esquema%"=="1" goto MBR_SW
 if "%esquema%"=="2" goto MBR_SWD
-if "%esquema%"=="3" goto MBR_SWL
-if "%esquema%"=="4" goto GPT_EW
-if "%esquema%"=="5" goto GPT_EWD
-if "%esquema%"=="6" goto GPT_EWR
-if "%esquema%"=="7" goto GPT_EWRD
+if "%esquema%"=="3" goto MBR_SWR
+if "%esquema%"=="4" goto MBR_SWRD
+if "%esquema%"=="5" goto GPT_EW
+if "%esquema%"=="6" goto GPT_EWD
+if "%esquema%"=="7" goto GPT_EWR
+if "%esquema%"=="8" goto GPT_EWRD
 if "%esquema%"=="0" goto SAIR
 
 echo Opcao invalida.
@@ -71,8 +148,20 @@ goto MENU_INICIAL
 set disco=
 cls
 echo.
+echo --------------------------------------------------------
+echo             D I S C O S    L I S T A D O S
+echo --------------------------------------------------------
+echo   Disco N    Status         Tam.       Livre       GPT
+echo   -------    ------         -------    -----       ---
+echo.
+echo list disk | diskpart | find "B"
+echo.
+echo --------------------------------------------------------
+echo.
+pause
+echo.
 echo =============================================
-echo          Defina o disco utilizado
+echo        Defina o disco a ser utilizado
 echo =============================================
 echo.
 set /p disco="         Informe o numero do disco: "
@@ -110,11 +199,17 @@ echo.
 echo =============================================
 echo         Defina a particao Recovery
 echo =============================================
+echo              S U G E S T A O
+echo ---------------------------------------------
+echo 380 MB -- Windows 10 Enterprise 2016 LTSB x64
+echo ---------------------------------------------
+echo 460 MB -- Windows 10 Pro 22h2 x64
+echo ---------------------------------------------
+echo 350 MB -- Windows 10 Pro/Home 21h1 x86
+echo ---------------------------------------------
 echo.
-set /p rec_gb="          Informe o tamanho em GB: "
-set /a rec_mb=rec_gb*1024
+set /p rec_mb="          Informe o tamanho em MB: "
 goto %1
-
 :: ============================================================
 :: MBR - SYSTEM + WINDOWS
 :: ============================================================
@@ -178,21 +273,62 @@ goto EXECUTAR
 
 
 :: ============================================================
-:: MBR - SYSTEM + WINDOWS + LINUX
+:: MBR - SYSTEM + WINDOWS + RECOVERY
 :: ============================================================
-:MBR_SWL
+:MBR_SWR
 set system_mb=100
 set tipo_disco=MBR
-set layout="System + Windows + Linux"
+set layout="System + Windows + Recovery"
 
-call :DEFINIR_DISCO MBR_SWL_ASK_WINDOWS
+call :DEFINIR_DISCO MBR_SWR_ASK_WINDOWS
 goto :eof
 
-:MBR_SWL_ASK_WINDOWS
-call :ASK_WINDOWS MBR_SWL_CONT
+:MBR_SWR_ASK_WINDOWS
+call :ASK_RECOVERY MBR_SWR_CONT
 goto :eof
 
-:MBR_SWL_CONT
+:MBR_SWR_CONT
+(
+echo select disk %disco%
+echo clean
+echo convert mbr
+echo create partition primary size=%system_mb%
+echo format quick fs=ntfs label="System"
+echo active
+echo assign letter=S
+echo create partition primary
+echo shrink minimum=%rec_mb%
+echo format quick fs=ntfs label="Windows"
+echo assign letter="W"
+echo create partition primary
+echo format quick fs=ntfs label="Recovery"
+echo assign letter="R"
+echo set id=27
+echo exit
+) > X:\script-diskpart.txt
+goto EXECUTAR
+
+
+:: ============================================================
+:: MBR - SYSTEM + WINDOWS + RECOVERY + DADOS
+:: ============================================================
+:MBR_SWRD
+set system_mb=100
+set tipo_disco=MBR
+set layout="System + Windows + Recovery + Dados"
+
+call :DEFINIR_DISCO MBR_SWRD_ASK_RECOVERY
+goto :eof
+
+:MBR_SWRD_ASK_RECOVERY
+call :ASK_RECOVERY MBR_SWRD_ASK_WINDOWS
+goto :eof
+
+:MBR_SWRD_ASK_WINDOWS
+call :ASK_WINDOWS MBR_SWRD_CONT
+goto :eof
+
+:MBR_SWRD_CONT
 (
 echo select disk %disco%
 echo clean
@@ -204,12 +340,17 @@ echo active
 echo create partition primary size=%win_mb%
 echo format quick fs=ntfs label="Windows"
 echo assign letter=W
+echo create partition primary size=%rec_mb%
+echo format quick fs=ntfs label="Recovery"
+echo assign letter="R"
+echo set id=27
 echo create partition primary
-echo format quick fs=ntfs label="Linux"
-echo assign letter=L
+echo format quick fs=ntfs label="Dados"
+echo assign letter=D
 echo exit
 ) > X:\script-diskpart.txt
 goto EXECUTAR
+
 
 
 :: ============================================================
@@ -355,6 +496,7 @@ echo exit
 ) > X:\script-diskpart.txt
 goto EXECUTAR
 
+
 :EXECUTAR
 cls
 echo =======================================
@@ -384,14 +526,14 @@ if defined dados_mb (
 )
 
 if defined rec_mb (
-    echo Particao Recovery: !rec_gb! GB
-)
-
-if !layout!=="System + Windows + Linux" (
-    echo Particao Linux: *restante do disco*
+    echo Particao Recovery: !rec_mb! MB
 )
 
 if !layout!=="System + Windows + Dados" (
+    echo Particao Dados: *restante do disco*
+)
+
+if !layout!=="System + Windows + Recovery + Dados" (
     echo Particao Dados: *restante do disco*
 )
 
@@ -426,13 +568,13 @@ echo =============================================
 echo.
 echo           Executando o Diskpart ...
 echo.
-echo ---------------------------------------------
+echo =============================================
 echo.
 if exist X:\script-diskpart.txt (
 diskpart /s X:\script-diskpart.txt | find "O disco especificado n"
 )
 echo.
-echo ---------------------------------------------
+echo =============================================
 echo.
 echo              Processo concluido.
 echo.
@@ -443,3 +585,4 @@ goto SAIR
 
 :SAIR
 exit /b
+

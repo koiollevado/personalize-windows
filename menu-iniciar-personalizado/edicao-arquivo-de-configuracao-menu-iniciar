@@ -1,0 +1,1 @@
+Para aplicar em novas instalações, copie esse XML para a pasta padrão do perfil: C:\Users\Default\AppData\Local\Microsoft\Windows\Shell\LayoutModification.xml (antes de sysprep ou durante a criação da imagem).

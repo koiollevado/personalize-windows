@@ -1,11 +1,18 @@
 # ==========================================================
-#  SCRIPT DE ADIÇÃO / REMOÇÃO DE ITENS DO MENU DE CONTEXTO
-#  Compatível com PowerShell 5.1 e PowerShell 7+
-#  Inclui ícones, submenus e loop interativo
+#  SCRIPT DE ADIÃ‡ÃƒO / REMOÃ‡ÃƒO DE ITENS DO MENU DE CONTEXTO
+#  CompatÃ­vel com PowerShell 5.1 e PowerShell 7+
+#  Encoding: ISO-8859-1 (Latin-1)
 # ==========================================================
 
+# ForÃ§ar encoding ISO-8859-1 (code page 28591)
+try {
+    [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding(28591)
+    $OutputEncoding = [Console]::OutputEncoding
+    chcp 28591 | Out-Null
+} catch {}
+
 # ---------------------------
-# Função auxiliar universal
+# FunÃ§Ã£o auxiliar universal
 # ---------------------------
 function Add-RegistryItemChecked {
     param(
@@ -13,11 +20,6 @@ function Add-RegistryItemChecked {
         [string]$Name,
         [string]$Value
     )
-
-    if ($Path.StartsWith("HKCR")) {
-        $Path = $Path.Replace("HKCR:", "Registry::HKEY_CLASSES_ROOT")
-        $Path = $Path.Replace("HKCR", "Registry::HKEY_CLASSES_ROOT")
-    }
 
     if (!(Test-Path $Path)) {
         New-Item -Path $Path -Force | Out-Null
@@ -27,22 +29,19 @@ function Add-RegistryItemChecked {
 }
 
 # ==========================================================
-# FUNÇÕES DE ADIÇÃO
+# FUNÃ‡Ã•ES DE ADIÃ‡ÃƒO
 # ==========================================================
 
-# ---------------------------
-# PowerShell Cascade
-# ---------------------------
 function Add-PowerShellCascade {
     $base = "Registry::HKEY_CLASSES_ROOT\Directory\ContextMenus\MenuPowerShell"
 
     Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\02MenuPowerShell" -Name "MUIVerb" -Value "Abrir o PowerShell aqui"
     Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\02MenuPowerShell" -Name "Icon" -Value "powershell.exe"
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\02MenuPowerShell" -Name "ExtendedSubCommandsKey" -Value "Directory\\ContextMenus\\MenuPowerShell"
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\02MenuPowerShell" -Name "ExtendedSubCommandsKey" -Value "Directory\ContextMenus\MenuPowerShell"
 
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\background\shell\02MenuPowerShell" -Name "MUIVerb" -Value "Abrir o PowerShell aqui"
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\background\shell\02MenuPowerShell" -Name "Icon" -Value "powershell.exe"
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\background\shell\02MenuPowerShell" -Name "ExtendedSubCommandsKey" -Value "Directory\\ContextMenus\\MenuPowerShell"
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\02MenuPowerShell" -Name "MUIVerb" -Value "Abrir o PowerShell aqui"
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\02MenuPowerShell" -Name "Icon" -Value "powershell.exe"
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\02MenuPowerShell" -Name "ExtendedSubCommandsKey" -Value "Directory\ContextMenus\MenuPowerShell"
 
     $subOpen = "$base\shell\open"
     $cmdOpen = "$subOpen\command"
@@ -50,7 +49,7 @@ function Add-PowerShellCascade {
     New-Item -Path $cmdOpen -Force | Out-Null
     Add-RegistryItemChecked -Path $subOpen -Name "MUIVerb" -Value "Normal"
     Add-RegistryItemChecked -Path $subOpen -Name "Icon" -Value "powershell.exe"
-    Add-RegistryItemChecked -Path $cmdOpen -Name "(default)" -Value "powershell.exe -noexit -command Set-Location '%V'"
+    Add-RegistryItemChecked -Path $cmdOpen -Name "(default)" -Value "powershell.exe -NoExit -Command Set-Location -LiteralPath '%V'"
 
     $subRunas = "$base\shell\runas"
     $cmdRunas = "$subRunas\command"
@@ -59,25 +58,22 @@ function Add-PowerShellCascade {
     Add-RegistryItemChecked -Path $subRunas -Name "MUIVerb" -Value "Elevado"
     Add-RegistryItemChecked -Path $subRunas -Name "Icon" -Value "powershell.exe"
     Add-RegistryItemChecked -Path $subRunas -Name "HasLUAShield" -Value ""
-    Add-RegistryItemChecked -Path $cmdRunas -Name "(default)" -Value "powershell.exe -noexit -command Set-Location '%V'"
+    Add-RegistryItemChecked -Path $cmdRunas -Name "(default)" -Value "powershell.exe -NoExit -Command Set-Location -LiteralPath '%V'"
 
     Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\Powershell" -Name "Extended" -Value ""
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\background\shell\Powershell" -Name "Extended" -Value ""
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\Powershell" -Name "Extended" -Value ""
 }
 
-# ---------------------------
-# CMD Cascade
-# ---------------------------
 function Add-CMDCascade {
     $base = "Registry::HKEY_CLASSES_ROOT\Directory\ContextMenus\MenuCmd"
 
     Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\01MenuCmd" -Name "MUIVerb" -Value "Abrir o CMD aqui"
     Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\01MenuCmd" -Name "Icon" -Value "cmd.exe"
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\01MenuCmd" -Name "ExtendedSubCommandsKey" -Value "Directory\\ContextMenus\\MenuCmd"
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\01MenuCmd" -Name "ExtendedSubCommandsKey" -Value "Directory\ContextMenus\MenuCmd"
 
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\background\shell\01MenuCmd" -Name "MUIVerb" -Value "Abrir o CMD aqui"
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\background\shell\01MenuCmd" -Name "Icon" -Value "cmd.exe"
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\background\shell\01MenuCmd" -Name "ExtendedSubCommandsKey" -Value "Directory\\ContextMenus\\MenuCmd"
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\01MenuCmd" -Name "MUIVerb" -Value "Abrir o CMD aqui"
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\01MenuCmd" -Name "Icon" -Value "cmd.exe"
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\01MenuCmd" -Name "ExtendedSubCommandsKey" -Value "Directory\ContextMenus\MenuCmd"
 
     $subOpen = "$base\shell\open"
     $cmdOpen = "$subOpen\command"
@@ -85,7 +81,7 @@ function Add-CMDCascade {
     New-Item -Path $cmdOpen -Force | Out-Null
     Add-RegistryItemChecked -Path $subOpen -Name "MUIVerb" -Value "Normal"
     Add-RegistryItemChecked -Path $subOpen -Name "Icon" -Value "cmd.exe"
-    Add-RegistryItemChecked -Path $cmdOpen -Name "(default)" -Value "cmd.exe /s /k pushd \"%V\""
+    Add-RegistryItemChecked -Path $cmdOpen -Name "(default)" -Value "cmd.exe /s /k pushd `"%V`""
 
     $subRunas = "$base\shell\runas"
     $cmdRunas = "$subRunas\command"
@@ -94,23 +90,17 @@ function Add-CMDCascade {
     Add-RegistryItemChecked -Path $subRunas -Name "MUIVerb" -Value "Elevado"
     Add-RegistryItemChecked -Path $subRunas -Name "Icon" -Value "cmd.exe"
     Add-RegistryItemChecked -Path $subRunas -Name "HasLUAShield" -Value ""
-    Add-RegistryItemChecked -Path $cmdRunas -Name "(default)" -Value "cmd.exe /s /k pushd \"%V\""
+    Add-RegistryItemChecked -Path $cmdRunas -Name "(default)" -Value "cmd.exe /s /k pushd `"%V`""
 
     Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\shell\cmd" -Name "Extended" -Value ""
-    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\background\shell\cmd" -Name "Extended" -Value ""
+    Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\cmd" -Name "Extended" -Value ""
 }
 
-# ---------------------------
-# Copiar / Mover
-# ---------------------------
 function Add-CopiarMover {
     Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\CopiarPara" -Name "(default)" -Value "{C2FBB630-2971-11D1-A18C-00C04FD75D13}"
     Add-RegistryItemChecked -Path "Registry::HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\MoverPara" -Name "(default)" -Value "{C2FBB631-2971-11D1-A18C-00C04FD75D13}"
 }
 
-# ---------------------------
-# Painel de Controle
-# ---------------------------
 function Add-Painel {
     $p = "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\PainelControle"
     Add-RegistryItemChecked -Path $p -Name "(default)" -Value "Painel de Controle"
@@ -120,9 +110,6 @@ function Add-Painel {
     Add-RegistryItemChecked -Path $cmdPath -Name "(default)" -Value "control.exe"
 }
 
-# ---------------------------
-# Impressoras
-# ---------------------------
 function Add-Impressoras {
     $p = "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\Impressoras"
     Add-RegistryItemChecked -Path $p -Name "(default)" -Value "Impressoras e Dispositivos"
@@ -132,9 +119,6 @@ function Add-Impressoras {
     Add-RegistryItemChecked -Path $cmdPath -Name "(default)" -Value "control printers"
 }
 
-# ---------------------------
-# Desinstalador
-# ---------------------------
 function Add-Desinstalador {
     $p = "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\Desinstalador"
     Add-RegistryItemChecked -Path $p -Name "(default)" -Value "Desinstalador de Programas"
@@ -144,9 +128,6 @@ function Add-Desinstalador {
     Add-RegistryItemChecked -Path $cmdPath -Name "(default)" -Value "control appwiz.cpl"
 }
 
-# ---------------------------
-# Limpar e desligar
-# ---------------------------
 function Add-LimparDesligar {
     $p = "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\LimparDesligar"
     Add-RegistryItemChecked -Path $p -Name "(default)" -Value "Limpar e Desligar"
@@ -156,9 +137,6 @@ function Add-LimparDesligar {
     Add-RegistryItemChecked -Path $cmdPath -Name "(default)" -Value "powershell.exe -File C:\Scripts\limpar.ps1"
 }
 
-# ---------------------------
-# Desligar PC
-# ---------------------------
 function Add-Desligar {
     $p = "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\DesligarPC"
     Add-RegistryItemChecked -Path $p -Name "(default)" -Value "Desligar"
@@ -168,9 +146,6 @@ function Add-Desligar {
     Add-RegistryItemChecked -Path $cmdPath -Name "(default)" -Value "shutdown /s /t 0"
 }
 
-# ---------------------------
-# Reiniciar PC
-# ---------------------------
 function Add-Reiniciar {
     $p = "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\ReiniciarPC"
     Add-RegistryItemChecked -Path $p -Name "(default)" -Value "Reiniciar"
@@ -180,14 +155,10 @@ function Add-Reiniciar {
     Add-RegistryItemChecked -Path $cmdPath -Name "(default)" -Value "shutdown /r /t 0"
 }
 
-# ==========================================================
-# Configurações do Windows (submenu completo)
-# ==========================================================
 function Add-Configuracoes {
-
     $base = "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\ConfiguracoesWindows"
 
-    Add-RegistryItemChecked -Path $base -Name "MUIVerb" -Value "Configurações"
+    Add-RegistryItemChecked -Path $base -Name "MUIVerb" -Value "ConfiguraÃ§Ãµes"
     Add-RegistryItemChecked -Path $base -Name "Icon" -Value "shell32.dll,104"
     Add-RegistryItemChecked -Path $base -Name "SubCommands" -Value ""
 
@@ -203,25 +174,25 @@ function Add-Configuracoes {
         )
 
         $path = "$sub\$KeyName"
-        $cmd = "$path\command"
+        $cmd  = "$path\command"
 
         New-Item -Path $path -Force | Out-Null
-        New-Item -Path $cmd -Force | Out-Null
+        New-Item -Path $cmd  -Force | Out-Null
 
         Add-RegistryItemChecked -Path $path -Name "MUIVerb" -Value $Label
-        Add-RegistryItemChecked -Path $path -Name "Icon" -Value $Icon
-        Add-RegistryItemChecked -Path $cmd -Name "(default)" -Value "explorer.exe $Uri"
+        Add-RegistryItemChecked -Path $path -Name "Icon"    -Value $Icon
+        Add-RegistryItemChecked -Path $cmd  -Name "(default)" -Value "explorer.exe $Uri"
     }
 
-    Add-ConfigItem -KeyName "01Sistema"          -Label "Sistema"                   -Uri "ms-settings:system"
-    Add-ConfigItem -KeyName "02Rede"             -Label "Rede e Internet"           -Uri "ms-settings:network-status"
-    Add-ConfigItem -KeyName "03Personalizacao"   -Label "Personalização"            -Uri "ms-settings:personalization"
-    Add-ConfigItem -KeyName "04Aplicativos"      -Label "Aplicativos"               -Uri "ms-settings:appsfeatures"
-    Add-ConfigItem -KeyName "05Bluetooth"        -Label "Bluetooth e Dispositivos"  -Uri "ms-settings:bluetooth"
-    Add-ConfigItem -KeyName "06DataHora"         -Label "Data e Hora"               -Uri "ms-settings:dateandtime"
-    Add-ConfigItem -KeyName "07Contas"           -Label "Contas"                    -Uri "ms-settings:yourinfo"
-    Add-ConfigItem -KeyName "08Privacidade"      -Label "Privacidade"               -Uri "ms-settings:privacy"
-    Add-ConfigItem -KeyName "09Atualizacao"      -Label "Atualização e Segurança"   -Uri "ms-settings:windowsupdate"
+    Add-ConfigItem -KeyName "01Sistema"        -Label "Sistema"                  -Uri "ms-settings:system"
+    Add-ConfigItem -KeyName "02Rede"           -Label "Rede e Internet"          -Uri "ms-settings:network-status"
+    Add-ConfigItem -KeyName "03Personalizacao" -Label "PersonalizaÃ§Ã£o"           -Uri "ms-settings:personalization"
+    Add-ConfigItem -KeyName "04Aplicativos"    -Label "Aplicativos"              -Uri "ms-settings:appsfeatures"
+    Add-ConfigItem -KeyName "05Bluetooth"      -Label "Bluetooth e Dispositivos" -Uri "ms-settings:bluetooth"
+    Add-ConfigItem -KeyName "06DataHora"       -Label "Data e Hora"              -Uri "ms-settings:dateandtime"
+    Add-ConfigItem -KeyName "07Contas"         -Label "Contas"                   -Uri "ms-settings:yourinfo"
+    Add-ConfigItem -KeyName "08Privacidade"    -Label "Privacidade"              -Uri "ms-settings:privacy"
+    Add-ConfigItem -KeyName "09Atualizacao"    -Label "AtualizaÃ§Ã£o e SeguranÃ§a"  -Uri "ms-settings:windowsupdate"
 }
 
 # ==========================================================
@@ -231,6 +202,10 @@ function Remove-ContextMenuItems {
     $paths = @(
         "Registry::HKEY_CLASSES_ROOT\Directory\ContextMenus\MenuPowerShell",
         "Registry::HKEY_CLASSES_ROOT\Directory\ContextMenus\MenuCmd",
+        "Registry::HKEY_CLASSES_ROOT\Directory\shell\01MenuCmd",
+        "Registry::HKEY_CLASSES_ROOT\Directory\shell\02MenuPowerShell",
+        "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\01MenuCmd",
+        "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\02MenuPowerShell",
         "Registry::HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\CopiarPara",
         "Registry::HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\MoverPara",
         "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\PainelControle",
@@ -239,9 +214,7 @@ function Remove-ContextMenuItems {
         "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\LimparDesligar",
         "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\DesligarPC",
         "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\ReiniciarPC",
-        "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\ConfiguracoesWindows",
-        "Registry::HKEY_CLASSES_ROOT\Directory\shell\01MenuCmd",
-        "Registry::HKEY_CLASSES_ROOT\Directory\shell\02MenuPowerShell"
+        "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\ConfiguracoesWindows"
     )
 
     foreach ($p in $paths) {
@@ -250,48 +223,59 @@ function Remove-ContextMenuItems {
         }
     }
 
-    Write-Host "`nTodos os itens foram removidos!" -ForegroundColor Green
+    $extendedPaths = @(
+        "Registry::HKEY_CLASSES_ROOT\Directory\shell\Powershell",
+        "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\Powershell",
+        "Registry::HKEY_CLASSES_ROOT\Directory\shell\cmd",
+        "Registry::HKEY_CLASSES_ROOT\Directory\Background\shell\cmd"
+    )
+
+    foreach ($p in $extendedPaths) {
+        if (Test-Path $p) {
+            Remove-ItemProperty -Path $p -Name "Extended" -ErrorAction SilentlyContinue
+        }
+    }
+
+    Write-Host "`nTodos os itens foram removidos e os padrÃµes do Windows restaurados!" -ForegroundColor Green
 }
 
 # ==========================================================
-# MENU COM CORES
+# MENU
 # ==========================================================
 function Show-Menu {
     Clear-Host
     Write-Host ""
-    Write-Host " " -ForegroundColor Cyan
-    Write-Host "===== OPÇÕES AO MENU DE CONTEXTO =====" -ForegroundColor Cyan
-    Write-Host " " -ForegroundColor Cyan
-    Write-Host (" [ 1 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Abrir o PowerShell"
-    Write-Host (" [ 2 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Abrir o Prompt (CMD)"
-    Write-Host (" [ 3 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Copiar / Mover para..."
-    Write-Host (" [ 4 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Painel de Controle"
-    Write-Host (" [ 5 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Impressoras e Dispositivos"
-    Write-Host (" [ 6 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Desinstalador de Programas"
-    Write-Host (" [ 7 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Limpar e desligar"
-    Write-Host (" [ 8 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Desligar"
-    Write-Host (" [ 9 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Reiniciar"
-    Write-Host (" [ 10]") -ForegroundColor Yellow -NoNewline; Write-Host "  REMOVER TODOS OS ITENS" -ForegroundColor Red
-    Write-Host (" [ 11]") -ForegroundColor Yellow -NoNewline; Write-Host "  Configurações (submenu completo)"
-    Write-Host (" [ 0 ]") -ForegroundColor Yellow -NoNewline;  Write-Host "  Sair"
-
+    Write-Host "===== OPÃ‡Ã•ES AO MENU DE CONTEXTO =====" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host (" [ 1 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Abrir o PowerShell"
+    Write-Host (" [ 2 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Abrir o Prompt (CMD)"
+    Write-Host (" [ 3 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Copiar / Mover para..."
+    Write-Host (" [ 4 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Painel de Controle"
+    Write-Host (" [ 5 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Impressoras e Dispositivos"
+    Write-Host (" [ 6 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Desinstalador de Programas"
+    Write-Host (" [ 7 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Limpar e desligar"
+    Write-Host (" [ 8 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Desligar"
+    Write-Host (" [ 9 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Reiniciar"
+    Write-Host (" [10 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  REMOVER TODOS OS ITENS" -ForegroundColor Red
+    Write-Host (" [11 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  ConfiguraÃ§Ãµes (submenu completo)"
+    Write-Host (" [ 0 ]") -ForegroundColor Yellow -NoNewline; Write-Host "  Sair"
     Write-Host "======================================" -ForegroundColor Cyan
     Write-Host ""
 }
 
 # ==========================================================
-# MAPA DE AÇÕES
+# MAPA DE AÃ‡Ã•ES
 # ==========================================================
 $map = @{
-    "1" = "Add-PowerShellCascade"
-    "2" = "Add-CMDCascade"
-    "3" = "Add-CopiarMover"
-    "4" = "Add-Painel"
-    "5" = "Add-Impressoras"
-    "6" = "Add-Desinstalador"
-    "7" = "Add-LimparDesligar"
-    "8" = "Add-Desligar"
-    "9" = "Add-Reiniciar"
+    "1"  = "Add-PowerShellCascade"
+    "2"  = "Add-CMDCascade"
+    "3"  = "Add-CopiarMover"
+    "4"  = "Add-Painel"
+    "5"  = "Add-Impressoras"
+    "6"  = "Add-Desinstalador"
+    "7"  = "Add-LimparDesligar"
+    "8"  = "Add-Desligar"
+    "9"  = "Add-Reiniciar"
     "11" = "Add-Configuracoes"
 }
 
@@ -299,12 +283,10 @@ $map = @{
 # LOOP PRINCIPAL
 # ==========================================================
 while ($true) {
-
     Show-Menu
-    $choice = Read-Host "Escolha uma opção"
+    $choice = Read-Host "Escolha uma opÃ§Ã£o"
 
     switch ($choice) {
-
         "0" { 
             Write-Host "Saindo..." -ForegroundColor Yellow
             exit
@@ -314,30 +296,27 @@ while ($true) {
             $confirm = Read-Host "Tem certeza que deseja remover TUDO? (s/n)"
             if ($confirm -eq "s") { 
                 Remove-ContextMenuItems
-                Write-Host "Ação concluída!" -ForegroundColor Green
+                Write-Host "AÃ§Ã£o concluÃ­da!" -ForegroundColor Green
                 Start-Sleep -Seconds 2
             }
         }
 
         default {
             if ($map.ContainsKey($choice)) {
-
                 $action = $map[$choice]
-                Write-Host "`nVocê escolheu: $action"
+                Write-Host "`nVocÃª escolheu: $action"
 
                 $confirm = Read-Host "Confirmar? (s/n)"
                 if ($confirm -eq "s") { 
                     & $action
-                    Write-Host "Ação concluída!" -ForegroundColor Green
+                    Write-Host "AÃ§Ã£o concluÃ­da!" -ForegroundColor Green
                     Start-Sleep -Seconds 2
                 }
-
-            } else {
-                Write-Host "Opção inválida!" -ForegroundColor Red
+            }
+            else {
+                Write-Host "OpÃ§Ã£o invÃ¡lida!" -ForegroundColor Red
                 Start-Sleep -Seconds 1.2
             }
         }
     }
-
-    Clear-Host
 }
